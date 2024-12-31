@@ -24,7 +24,11 @@
     "typecheck": "tsc",
     "typegen": "wrangler types",
     "preview": "pnpm run build && pnpm run start",
-    "prepare": "husky"
+    "prepare": "husky",
+    "upstream:add": "git remote add upstream https://github.com/stackblitz-labs/bolt.diy.git",
+    "upstream:fetch": "git fetch upstream",
+    "upstream:sync": "git pull upstream main --rebase",
+    "upstream:status": "git remote -v && git status"
   },
   "engines": {
     "node": ">=18.18.0"
