@@ -15,6 +15,7 @@ import { SendButton } from './SendButton.client';
 import { APIKeyManager, getApiKeysFromCookies } from './APIKeyManager';
 import Cookies from 'js-cookie';
 import * as Tooltip from '@radix-ui/react-tooltip';
+import { Dialog, DialogRoot, DialogTitle, DialogDescription } from '~/components/ui/Dialog';
 
 import styles from './BaseChat.module.scss';
 import { ExportChatButton } from '~/components/chat/chatExportAndImport/ExportChatButton';
@@ -66,6 +67,115 @@ interface BaseChatProps {
   clearAlert?: () => void;
 }
 
+interface ModelSettingsDialogProps {
+  open: boolean;
+  onClose: () => void;
+  model?: string;
+  setModel?: (model: string) => void;
+  provider?: ProviderInfo;
+  setProvider?: (provider: ProviderInfo) => void;
+  providerList?: ProviderInfo[];
+  apiKeys: Record<string, string>;
+  modelList: any[];
+  onApiKeysChange: (providerName: string, apiKey: string) => void;
+  isModelLoading?: string;
+}
+
+const ModelSettingsDialog = ({
+  open,
+  onClose,
+  model,
+  setModel,
+  provider,
+  setProvider,
+  providerList,
+  apiKeys,
+  modelList,
+  onApiKeysChange,
+  isModelLoading,
+}: ModelSettingsDialogProps) => {
+  return (
+    <DialogRoot open={open}>
+      <Dialog onClose={onClose} className="bg-gradient-to-br from-[#22D3EE]/10 via-[#A78BFA]/10 to-[#E879F9]/10">
+        <div className="relative overflow-hidden">
+          {/* Background decorative elements */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-[#22D3EE]/20 blur-3xl" />
+            <div className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full bg-[#E879F9]/20 blur-3xl" />
+          </div>
+
+          <DialogTitle className="relative border-b border-white/10 bg-black/20 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-[#22D3EE] to-[#A78BFA]">
+                <div className="i-ph:gear-six-duotone text-xl text-white" />
+              </div>
+              <span>Model Settings</span>
+            </div>
+          </DialogTitle>
+
+          <DialogDescription className="relative">
+            <div className="space-y-6">
+              {/* Provider Section */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-[#22D3EE] flex items-center gap-2">
+                  <div className="i-ph:buildings-duotone" />
+                  Provider Selection
+                </h3>
+                <div className="p-4 rounded-lg border border-white/10 bg-black/20 backdrop-blur-sm">
+                  <ModelSelector
+                    key={provider?.name + ':' + modelList.length}
+                    model={model}
+                    setModel={setModel}
+                    modelList={modelList}
+                    provider={provider}
+                    setProvider={setProvider}
+                    providerList={providerList || (PROVIDER_LIST as ProviderInfo[])}
+                    apiKeys={apiKeys}
+                    modelLoading={isModelLoading}
+                  />
+                </div>
+              </div>
+
+              {/* API Key Section */}
+              {(providerList || []).length > 0 && provider && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-[#E879F9] flex items-center gap-2">
+                    <div className="i-ph:key-duotone" />
+                    API Configuration
+                  </h3>
+                  <div className="p-4 rounded-lg border border-white/10 bg-black/20 backdrop-blur-sm">
+                    <APIKeyManager
+                      provider={provider}
+                      apiKey={apiKeys[provider.name] || ''}
+                      setApiKey={(key) => {
+                        onApiKeysChange(provider.name, key);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Footer with provider info */}
+              <div className="mt-6 pt-4 border-t border-white/10">
+                <div className="flex items-center justify-between text-xs text-white/60">
+                  <div className="flex items-center gap-2">
+                    <div className="i-ph:info-duotone" />
+                    <span>Selected Provider: {provider?.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="i-ph:cube-duotone" />
+                    <span>Models Available: {modelList.filter((m) => m.provider === provider?.name).length}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DialogDescription>
+        </div>
+      </Dialog>
+    </DialogRoot>
+  );
+};
+
 export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
   (
     {
@@ -103,7 +213,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
     const [apiKeys, setApiKeys] = useState<Record<string, string>>(getApiKeysFromCookies());
     const [modelList, setModelList] = useState(MODEL_LIST);
-    const [isModelSettingsCollapsed, setIsModelSettingsCollapsed] = useState(false);
+    const [isModelSettingsOpen, setIsModelSettingsOpen] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
     const [transcript, setTranscript] = useState('');
@@ -390,16 +500,17 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         gradientUnits="userSpaceOnUse"
                         gradientTransform="rotate(-45)"
                       >
-                        <stop offset="0%" stopColor="#b44aff" stopOpacity="0%"></stop>
-                        <stop offset="40%" stopColor="#b44aff" stopOpacity="80%"></stop>
-                        <stop offset="50%" stopColor="#b44aff" stopOpacity="80%"></stop>
-                        <stop offset="100%" stopColor="#b44aff" stopOpacity="0%"></stop>
+                        <stop offset="0%" stopColor="#E879F9" stopOpacity="0%"></stop>
+                        <stop offset="30%" stopColor="#E879F9" stopOpacity="80%"></stop>
+                        <stop offset="50%" stopColor="#E879F9" stopOpacity="80%"></stop>
+                        <stop offset="70%" stopColor="#E879F9" stopOpacity="80%"></stop>
+                        <stop offset="100%" stopColor="#E879F9" stopOpacity="0%"></stop>
                       </linearGradient>
                       <linearGradient id="shine-gradient">
-                        <stop offset="0%" stopColor="white" stopOpacity="0%"></stop>
-                        <stop offset="40%" stopColor="#ffffff" stopOpacity="80%"></stop>
-                        <stop offset="50%" stopColor="#ffffff" stopOpacity="80%"></stop>
-                        <stop offset="100%" stopColor="white" stopOpacity="0%"></stop>
+                        <stop offset="0%" stopColor="#22D3EE" stopOpacity="0%"></stop>
+                        <stop offset="40%" stopColor="#22D3EE" stopOpacity="80%"></stop>
+                        <stop offset="50%" stopColor="#22D3EE" stopOpacity="80%"></stop>
+                        <stop offset="100%" stopColor="#22D3EE" stopOpacity="0%"></stop>
                       </linearGradient>
                     </defs>
                     <rect className={classNames(styles.PromptEffectLine)} pathLength="100" strokeLinecap="round"></rect>
@@ -408,28 +519,19 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   <div>
                     <ClientOnly>
                       {() => (
-                        <div className={isModelSettingsCollapsed ? 'hidden' : ''}>
-                          <ModelSelector
-                            key={provider?.name + ':' + modelList.length}
-                            model={model}
-                            setModel={setModel}
-                            modelList={modelList}
-                            provider={provider}
-                            setProvider={setProvider}
-                            providerList={providerList || (PROVIDER_LIST as ProviderInfo[])}
-                            apiKeys={apiKeys}
-                            modelLoading={isModelLoading}
-                          />
-                          {(providerList || []).length > 0 && provider && (
-                            <APIKeyManager
-                              provider={provider}
-                              apiKey={apiKeys[provider.name] || ''}
-                              setApiKey={(key) => {
-                                onApiKeysChange(provider.name, key);
-                              }}
-                            />
-                          )}
-                        </div>
+                        <ModelSettingsDialog
+                          open={isModelSettingsOpen}
+                          onClose={() => setIsModelSettingsOpen(false)}
+                          model={model}
+                          setModel={setModel}
+                          provider={provider}
+                          setProvider={setProvider}
+                          providerList={providerList}
+                          apiKeys={apiKeys}
+                          modelList={modelList}
+                          onApiKeysChange={onApiKeysChange}
+                          isModelLoading={isModelLoading}
+                        />
                       )}
                     </ClientOnly>
                   </div>
@@ -577,15 +679,15 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           title="Model Settings"
                           className={classNames('transition-all flex items-center gap-1', {
                             'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent':
-                              isModelSettingsCollapsed,
+                              isModelSettingsOpen,
                             'bg-bolt-elements-item-backgroundDefault text-bolt-elements-item-contentDefault':
-                              !isModelSettingsCollapsed,
+                              !isModelSettingsOpen,
                           })}
-                          onClick={() => setIsModelSettingsCollapsed(!isModelSettingsCollapsed)}
+                          onClick={() => setIsModelSettingsOpen(!isModelSettingsOpen)}
                           disabled={!providerList || providerList.length === 0}
                         >
-                          <div className={`i-ph:caret-${isModelSettingsCollapsed ? 'right' : 'down'} text-lg`} />
-                          {isModelSettingsCollapsed ? <span className="text-xs">{model}</span> : <span />}
+                          <div className={`i-ph:caret-${isModelSettingsOpen ? 'right' : 'down'} text-lg`} />
+                          {isModelSettingsOpen ? <span className="text-xs">{model}</span> : <span />}
                         </IconButton>
                       </div>
                       {input.length > 3 ? (
