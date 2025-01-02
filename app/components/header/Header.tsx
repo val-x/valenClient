@@ -7,16 +7,34 @@ import { ChatDescription } from '~/lib/persistence/ChatDescription.client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from '@remix-run/react';
 import { useState, useEffect } from 'react';
+import { Dialog, DialogTitle, DialogDescription, DialogButton, DialogRoot } from '~/components/ui/Dialog';
+import { SiAppwrite } from 'react-icons/si';
 
 export function Header() {
   const chat = useStore(chatStore);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showAppwriteDialog, setShowAppwriteDialog] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  const handleAppwriteConnect = async () => {
+    try {
+      setIsConnecting(true);
+      window.location.href = 'https://cloud.appwrite.io/console';
+      setShowAppwriteDialog(false);
+    } catch (error) {
+      console.error('Error connecting to Appwrite:', error);
+
+      // TODO: Add error handling UI
+    } finally {
+      setIsConnecting(false);
+    }
+  };
 
   const navItems = [
     { label: 'Home', path: 'https://www.val-x.in/' },
-    { label: 'Showcase', path: 'https://www.val-x.in/showcase' },
-    { label: 'Community', path: 'https://www.val-x.in/blog' },
+    { label: 'Templates', path: '/templates' },
+    { label: 'Agents', path: '/agents' },
     { label: 'Learn', path: 'https://www.val-x.in/learn-with-us' },
   ];
 
@@ -31,12 +49,12 @@ export function Header() {
 
   return (
     <motion.header
-      initial={{ y: -100 }}
+      initial={{ y: 0 }}
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 50 }}
       className={classNames(
-        'fixed w-full z-50 transition-all duration-500',
-        isScrolled ? 'bg-black/50 backdrop-blur-xl border-b border-white/10 py-3' : 'bg-transparent py-6',
+        'fixed top-0 left-0 right-0 w-full z-50 transition-all duration-500',
+        isScrolled ? 'bg-black/50 backdrop-blur-xl border-b border-white/10 py-3' : 'bg-black/30 backdrop-blur-sm py-4',
       )}
     >
       <nav className="relative flex justify-between items-center px-6 max-w-7xl mx-auto">
@@ -160,13 +178,83 @@ export function Header() {
             <span className="flex-1 md:flex-initial px-4 truncate text-center text-bolt-elements-textPrimary">
               <ClientOnly>{() => <ChatDescription />}</ClientOnly>
             </span>
-            <ClientOnly>
-              {() => (
-                <div className="mr-1">
-                  <HeaderActionButtons />
-                </div>
-              )}
-            </ClientOnly>
+            <div className="flex items-center gap-3">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="relative px-4 py-2 rounded-full text-sm font-medium text-white overflow-hidden group"
+                onClick={() => setShowAppwriteDialog(true)}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-violet-500 to-fuchsia-500 opacity-100 group-hover:opacity-90 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 opacity-0 group-hover:opacity-100 blur-xl transition-opacity" />
+                <span className="relative z-10 flex items-center gap-2">
+                  <SiAppwrite className="text-lg" />
+                  Appwrite
+                </span>
+              </motion.button>
+
+              {/* Appwrite Dialog */}
+              <DialogRoot open={showAppwriteDialog}>
+                <Dialog onClose={() => setShowAppwriteDialog(false)}>
+                  <DialogTitle>Connect Appwrite</DialogTitle>
+                  <DialogDescription>
+                    <div className="space-y-4">
+                      <p>Connect to add authentication, store data, or call third party APIs.</p>
+                      <div className="mt-2 text-sm text-gray-500">
+                        <p className="font-medium mb-2">This will grant VAL-X access to:</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          <li>Auth configurations and SSO providers</li>
+                          <li>Database configurations and schema types</li>
+                          <li>Custom domains and subdomains</li>
+                          <li>Edge functions</li>
+                          <li>Environments and branches</li>
+                          <li>Organization and member access</li>
+                          <li>Metadata and network settings</li>
+                          <li>API keys and secrets</li>
+                          <li>Storage buckets and files</li>
+                        </ul>
+                      </div>
+                      <div className="flex justify-between items-center pt-2">
+                        <a
+                          href="https://appwrite.io/docs"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-accent-500 hover:text-accent-600 transition-colors"
+                        >
+                          View Documentation
+                        </a>
+                        <DialogButton type="primary" onClick={handleAppwriteConnect}>
+                          {isConnecting ? 'Connecting...' : 'Connect'}
+                        </DialogButton>
+                      </div>
+                    </div>
+                  </DialogDescription>
+                </Dialog>
+              </DialogRoot>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="relative px-4 py-2 rounded-full text-sm font-medium text-white overflow-hidden group"
+                onClick={() => {
+                  /* TODO: Implement publish */
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-violet-500 to-fuchsia-500 opacity-100 group-hover:opacity-90 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 opacity-0 group-hover:opacity-100 blur-xl transition-opacity" />
+                <span className="relative z-10 flex items-center gap-2">
+                  <div className="i-ph:rocket-launch text-lg" />
+                  Publish
+                </span>
+              </motion.button>
+              <ClientOnly>
+                {() => (
+                  <div className="mr-1">
+                    <HeaderActionButtons />
+                  </div>
+                )}
+              </ClientOnly>
+            </div>
           </div>
         )}
       </nav>
