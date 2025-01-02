@@ -530,12 +530,14 @@ export function Header() {
                             onMouseEnter={() => setShowProjectsPopover(true)}
                             onMouseLeave={(e) => {
                               const rect = projectsPopoverRef.current?.getBoundingClientRect();
+
                               if (rect) {
                                 const isOverProjects =
                                   e.clientX >= rect.left &&
                                   e.clientX <= rect.right &&
                                   e.clientY >= rect.top &&
                                   e.clientY <= rect.bottom;
+
                                 if (!isOverProjects) {
                                   setShowProjectsPopover(false);
                                 }
