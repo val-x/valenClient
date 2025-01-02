@@ -28,7 +28,8 @@
     "upstream:add": "git remote add upstream https://github.com/stackblitz-labs/bolt.diy.git",
     "upstream:fetch": "git fetch upstream",
     "upstream:sync": "git pull upstream main --rebase",
-    "upstream:status": "git remote -v && git status"
+    "upstream:status": "git remote -v && git status",
+    "sync": "./scripts/sync-upstream.sh"
   },
   "engines": {
     "node": ">=18.18.0"
