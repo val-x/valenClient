@@ -5,8 +5,29 @@
       <stop offset="50%" style="stop-color:#A78BFA" />
       <stop offset="100%" style="stop-color:#E879F9" />
     </linearGradient>
+    <!-- Highlight gradient -->
+    <linearGradient id="highlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:white;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:white;stop-opacity:0" />
+    </linearGradient>
   </defs>
-  <rect width="16" height="16" rx="2" fill="url(#gradient)" />
-  <path d="M4 4l4 8l4-8" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-  <path d="M5.5 7h5" stroke="white" stroke-width="1.5" stroke-linecap="round" />
+  
+  <!-- Modern hexagonal background -->
+  <path d="M8 1L14.5 4.5V11.5L8 15L1.5 11.5V4.5L8 1Z" fill="url(#gradient)" />
+  
+  <!-- Highlight overlay -->
+  <path d="M8 1L14.5 4.5L8 8L1.5 4.5L8 1Z" fill="url(#highlight)" />
+  
+  <!-- Stylized V and X combination -->
+  <path d="M5 5L8 11L11 5M6.5 8H9.5" 
+        stroke="white" 
+        stroke-width="1.2" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"
+        fill="none" />
+  
+  <!-- Decorative tech elements -->
+  <circle cx="8" cy="3.5" r="0.5" fill="white" opacity="0.8" />
+  <circle cx="4" cy="8" r="0.5" fill="white" opacity="0.8" />
+  <circle cx="12" cy="8" r="0.5" fill="white" opacity="0.8" />
 </svg>
