@@ -83,6 +83,7 @@ project, please check the [project management guide](./PROJECT.md) to get starte
 - ✅ Perplexity Integration (@meetpateltech)
 - ✅ AWS Bedrock Integration (@kunjabijukchhe)
 - ⬜ **HIGH PRIORITY** - Prevent bolt from rewriting files as often (file locking and diffs)
+- ⬜ **HIGH PRIORITY** - Prevent Val-X from rewriting files as often (file locking and diffs)
 - ⬜ **HIGH PRIORITY** - Better prompting for smaller LLMs (code window sometimes doesn't start)
 - ⬜ **HIGH PRIORITY** - Run agents in the backend as opposed to a single model call
 - ⬜ **HIGH PRIORITY** - Add [modelcontextprotocol](https://github.com/modelcontextprotocol/typescript-sdk)
