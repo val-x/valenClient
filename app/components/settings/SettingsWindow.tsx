@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { useState, type ReactElement } from 'react';
 import { classNames } from '~/utils/classNames';
 import { DialogTitle, dialogVariants, dialogBackdropVariants } from '~/components/ui/Dialog';
-import { IconButton } from '~/components/ui/IconButton';
 import styles from './Settings.module.scss';
 import ProvidersTab from './providers/ProvidersTab';
 import { useSettings } from '~/lib/hooks/useSettings';
@@ -56,7 +55,7 @@ export const SettingsWindow = ({ open, onClose }: SettingsProps) => {
       <RadixDialog.Portal>
         <RadixDialog.Overlay asChild onClick={onClose}>
           <motion.div
-            className="bg-black/50 fixed inset-0 z-max backdrop-blur-sm"
+            className="bg-black/30 fixed inset-0 z-max backdrop-blur-md"
             initial="closed"
             animate="open"
             exit="closed"
@@ -65,60 +64,90 @@ export const SettingsWindow = ({ open, onClose }: SettingsProps) => {
         </RadixDialog.Overlay>
         <RadixDialog.Content aria-describedby={undefined} asChild>
           <motion.div
-            className="fixed top-[50%] left-[50%] z-max h-[85vh] w-[90vw] max-w-[900px] translate-x-[-50%] translate-y-[-50%] border border-bolt-elements-borderColor rounded-lg shadow-lg focus:outline-none overflow-hidden"
+            className="fixed top-[50%] left-[50%] z-max h-[85vh] w-[90vw] max-w-[900px] translate-x-[-50%] translate-y-[-50%] border border-[#22D3EE]/20 rounded-2xl shadow-2xl focus:outline-none overflow-hidden bg-gradient-to-br from-[#22D3EE]/5 via-transparent to-[#A78BFA]/5"
             initial="closed"
             animate="open"
             exit="closed"
             variants={dialogVariants}
+            style={{
+              boxShadow: '0 8px 32px rgba(34, 211, 238, 0.1), 0 8px 32px rgba(167, 139, 250, 0.1)',
+            }}
           >
             <div className="flex h-full">
               <div
                 className={classNames(
-                  'w-48 border-r border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 p-4 flex flex-col justify-between',
+                  'w-56 border-r border-[#22D3EE]/20 bg-gradient-to-b from-[#22D3EE]/5 via-transparent to-[#A78BFA]/5 p-6 flex flex-col justify-between backdrop-blur-sm',
                   styles['settings-tabs'],
                 )}
               >
-                <DialogTitle className="flex-shrink-0 text-lg font-semibold text-bolt-elements-textPrimary mb-2">
-                  Settings
-                </DialogTitle>
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={classNames(activeTab === tab.id ? styles.active : '')}
-                  >
-                    <div className={tab.icon} />
-                    {tab.label}
-                  </button>
-                ))}
-                <div className="mt-auto flex flex-col gap-2">
-                  <a
-                    href="https://github.com/stackblitz-labs/bolt.diy"
+                <div>
+                  <DialogTitle className="flex items-center gap-2 text-xl font-semibold mb-6">
+                    <div className="i-ph:gear text-xl text-[#22D3EE]" />
+                    <span className="bg-gradient-to-r from-[#22D3EE] to-[#A78BFA] bg-clip-text text-transparent">
+                      Settings
+                    </span>
+                  </DialogTitle>
+                  <motion.div className="space-y-2">
+                    {tabs.map((tab) => (
+                      <motion.button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={classNames(activeTab === tab.id ? styles.active : '')}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                      >
+                        <div className={tab.icon} />
+                        {tab.label}
+                      </motion.button>
+                    ))}
+                  </motion.div>
+                </div>
+                <motion.div
+                  className="mt-auto flex flex-col gap-3"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <motion.a
+                    href="https://val-x.in/docs"
                     target="_blank"
                     rel="noopener noreferrer"
                     className={classNames(styles['settings-button'], 'flex items-center gap-2')}
-                  >
-                    <div className="i-ph:github-logo" />
-                    GitHub
-                  </a>
-                  <a
-                    href="https://stackblitz-labs.github.io/bolt.diy/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={classNames(styles['settings-button'], 'flex items-center gap-2')}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     <div className="i-ph:book" />
-                    Docs
-                  </a>
-                </div>
+                    Documentation
+                  </motion.a>
+                </motion.div>
               </div>
 
-              <div className="flex-1 flex flex-col p-8 pt-10 bg-bolt-elements-background-depth-2">
-                <div className="flex-1 overflow-y-auto">{tabs.find((tab) => tab.id === activeTab)?.component}</div>
-              </div>
+              <motion.div
+                className="flex-1 flex flex-col p-8 pt-10 bg-gradient-to-br from-white/50 via-transparent to-transparent dark:from-black/50"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <motion.div
+                  className={classNames('flex-1 overflow-y-auto custom-scrollbar', styles['selectable-text'])}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  {tabs.find((tab) => tab.id === activeTab)?.component}
+                </motion.div>
+              </motion.div>
             </div>
             <RadixDialog.Close asChild onClick={onClose}>
-              <IconButton icon="i-ph:x" className="absolute top-[10px] right-[10px]" />
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                className="absolute top-[16px] right-[16px] w-8 h-8 flex items-center justify-center bg-gradient-to-r from-[#22D3EE] to-[#A78BFA] rounded-xl cursor-pointer"
+              >
+                <div className="i-ph:x text-xl text-white" />
+              </motion.div>
             </RadixDialog.Close>
           </motion.div>
         </RadixDialog.Content>
