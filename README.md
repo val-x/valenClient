@@ -50,7 +50,7 @@ bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMed
 - ✅ xAI Grok Beta Integration (@milutinke)
 - ✅ LM Studio Integration (@karrot0)
 - ✅ HuggingFace Integration (@ahsan3219)
-- ✅ Val-X terminal to see the output of LLM run commands (@thecodacus)
+- ✅ Val-X  terminal to see the output of LLM run commands (@thecodacus)
 - ✅ Streaming of code output (@thecodacus)
 - ✅ Ability to revert code to earlier version (@wonderwhy-er)
 - ✅ Chat history backup and restore functionality (@sidbetatester)
@@ -70,8 +70,10 @@ bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMed
 - ✅ Selection tool to target changes visually (@emcconnell)
 - ✅ Detect terminal Errors and ask Val-X to fix it (@thecodacus)
 - ✅ Detect preview Errors and ask Val-X to fix it (@wonderwhy-er)
+- ✅ Detect terminal Errors and ask Val-X to fix it (@thecodacus)
+- ✅ Detect preview Errors and ask Val-X to fix it (@wonderwhy-er)
 - ✅ Add Starter Template Options (@thecodacus)
-- ⬜ **HIGH PRIORITY** - Prevent bolt from rewriting files as often (file locking and diffs)
+- ⬜ **HIGH PRIORITY** - Prevent Val-X from rewriting files as often (file locking and diffs)
 - ⬜ **HIGH PRIORITY** - Better prompting for smaller LLMs (code window sometimes doesn't start)
 - ⬜ **HIGH PRIORITY** - Run agents in the backend as opposed to a single model call
 - ⬜ Deploy directly to Vercel/Netlify/other similar platforms
