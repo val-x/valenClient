@@ -12,6 +12,18 @@ import Cookies from 'js-cookie';
 import ChatAlert from '~/components/chat/ChatAlert';
 import { toast } from 'react-toastify';
 
+declare global {
+  interface Window {
+    ENV?: {
+      env: {
+        SUPABASE_CLIENT_ID: string;
+        SUPABASE_CLIENT_SECRET: string;
+      };
+      isSupabaseConfigured: boolean;
+    };
+  }
+}
+
 interface SupabaseOrg {
   id: string;
   name: string;
@@ -45,51 +57,120 @@ export function Header() {
   const [selectedOrg, setSelectedOrg] = useState<SupabaseOrg | null>(null);
   const [isLoadingOrgs, setIsLoadingOrgs] = useState(false);
   const [showAccessTokenInput, setShowAccessTokenInput] = useState(false);
-  const [accessToken, setAccessToken] = useState(Cookies.get('supabaseAccessToken') || '');
-  const [isVerifyingToken, setIsVerifyingToken] = useState(false);
   const supabaseButtonRef = useRef<HTMLButtonElement>(null);
   const orgButtonRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const projectsPopoverRef = useRef<HTMLDivElement>(null);
 
-  // Function to verify and save access token
-  const handleSaveAccessToken = async () => {
-    if (!accessToken.trim()) {
-      toast.error('Please enter a valid access token');
-      return;
-    }
-
-    setIsVerifyingToken(true);
-
+  // Function to initiate OAuth flow
+  const initiateOAuthFlow = () => {
     try {
-      // Test the token by making a request to the organizations endpoint
-      const response = await fetch('https://api.supabase.com/v1/organizations', {
-        method: 'GET',
+      const { env, isSupabaseConfigured } = window.ENV || {};
+
+      if (!isSupabaseConfigured) {
+        toast.error('Supabase is not properly configured. Please check your environment variables.');
+        return;
+      }
+
+      const clientId = env?.SUPABASE_CLIENT_ID;
+
+      if (!clientId) {
+        toast.error('Supabase client configuration is missing');
+        return;
+      }
+
+      const redirectUri = encodeURIComponent(window.location.origin + '/auth/callback');
+      const scope = encodeURIComponent('all');
+      const responseType = 'code';
+
+      const authUrl =
+        `https://api.supabase.com/v1/authorize?` +
+        `response_type=${responseType}&` +
+        `client_id=${clientId}&` +
+        `redirect_uri=${redirectUri}&` +
+        `scope=${scope}`;
+
+      window.location.href = authUrl;
+    } catch (error) {
+      console.error('Error initiating OAuth flow:', error);
+      toast.error('Failed to initiate Supabase authentication');
+    }
+  };
+
+  // Function to exchange authorization code for access token
+  const exchangeCodeForToken = async (code: string) => {
+    try {
+      const { env } = window.ENV || {};
+      const clientId = env?.SUPABASE_CLIENT_ID;
+      const clientSecret = env?.SUPABASE_CLIENT_SECRET;
+
+      if (!clientId || !clientSecret) {
+        throw new Error('Supabase client configuration is missing');
+      }
+
+      const response = await fetch('https://api.supabase.com/v1/token', {
+        method: 'POST',
         headers: {
-          Authorization: `Bearer ${accessToken}`,
-          apikey: accessToken,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          grant_type: 'authorization_code',
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: window.location.origin + '/auth/callback',
+        }),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to verify token: ${response.statusText}`);
+        const errorData = (await response.json().catch(() => ({}))) as { message?: string };
+        throw new Error(errorData.message || 'Failed to exchange code for token');
       }
 
-      // If successful, save the token
-      Cookies.set('supabaseAccessToken', accessToken, { expires: 30 }); // Token expires in 30 days
+      const data = (await response.json()) as { access_token: string };
+      Cookies.set('supabaseAccessToken', data.access_token, { expires: 30 });
       setShowAccessTokenInput(false);
-      toast.success('Access token verified and saved successfully');
-
-      // Fetch organizations with the new token
+      toast.success('Successfully authenticated with Supabase');
       await fetchOrganizations();
     } catch (error) {
-      console.error('Error verifying access token:', error);
-      toast.error('Invalid access token. Please check and try again.');
-      Cookies.remove('supabaseAccessToken'); // Remove invalid token
-    } finally {
-      setIsVerifyingToken(false);
+      console.error('Error exchanging code for token:', error);
+      toast.error(error instanceof Error ? error.message : 'Authentication failed. Please try again.');
+      setShowAccessTokenInput(true);
     }
   };
+
+  // Check for authorization code in URL on component mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+
+    if (code) {
+      exchangeCodeForToken(code);
+
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  // Replace the existing token input UI with OAuth button
+  const renderAuthSection = () => (
+    <div className="space-y-4">
+      <div className="p-4 rounded-xl bg-gradient-to-r from-white/5 to-transparent border border-white/10">
+        <h3 className="text-sm font-medium text-white/90 mb-2">Authentication Required</h3>
+        <p className="text-xs text-white/70 mb-4">
+          Connect your Supabase account to access organizations and projects.
+        </p>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          onClick={initiateOAuthFlow}
+          className="w-full py-2 px-4 text-center text-white transition-colors rounded-lg bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-violet-400 flex items-center justify-center gap-2"
+        >
+          <div className="i-ph:sign-in" />
+          Sign in with Supabase
+        </motion.button>
+      </div>
+    </div>
+  );
 
   // Function to fetch organizations from Supabase
   const fetchOrganizations = async () => {
@@ -107,12 +188,12 @@ export function Header() {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${supabaseAccessToken}`,
-          apikey: supabaseAccessToken,
         },
       });
 
       if (!orgsResponse.ok) {
-        throw new Error('Failed to fetch organizations');
+        const errorData = (await orgsResponse.json().catch(() => ({}))) as { message?: string };
+        throw new Error(errorData.message || 'Failed to fetch organizations');
       }
 
       const orgsData = (await orgsResponse.json()) as SupabaseOrgResponse[];
@@ -137,8 +218,8 @@ export function Header() {
       }
     } catch (error) {
       console.error('Error fetching organizations:', error);
-      toast.error('Failed to fetch organizations. Please check your Supabase access token.');
-      setShowAccessTokenInput(true); // Show token input if fetch fails
+      toast.error(error instanceof Error ? error.message : 'Failed to fetch organizations');
+      setShowAccessTokenInput(true);
     } finally {
       setIsLoadingOrgs(false);
     }
@@ -439,61 +520,7 @@ export function Header() {
                       </div>
 
                       {!Cookies.get('supabaseAccessToken') || showAccessTokenInput ? (
-                        <div className="space-y-4">
-                          <div className="p-4 rounded-xl bg-gradient-to-r from-white/5 to-transparent border border-white/10">
-                            <h3 className="text-sm font-medium text-white/90 mb-2">Access Token Required</h3>
-                            <p className="text-xs text-white/70 mb-4">
-                              To connect with Supabase, please provide your access token. You can find this in your{' '}
-                              <a
-                                href="https://supabase.com/dashboard/account/tokens"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-cyan-400 hover:text-cyan-300 transition-colors underline decoration-white/20 hover:decoration-cyan-300/50"
-                              >
-                                Supabase Dashboard
-                              </a>
-                              .
-                            </p>
-                            <div className="space-y-4">
-                              <input
-                                type="password"
-                                value={accessToken}
-                                onChange={(e) => setAccessToken(e.target.value)}
-                                placeholder="Enter your access token"
-                                className="w-full bg-black/50 text-white border border-white/10 rounded-lg px-4 py-2 focus:outline-none focus:border-cyan-500/50 placeholder-white/30"
-                              />
-                              <div className="flex gap-2">
-                                <motion.button
-                                  whileHover={{ scale: 1.02 }}
-                                  onClick={handleSaveAccessToken}
-                                  disabled={isVerifyingToken || !accessToken.trim()}
-                                  className="flex-1 py-2 px-4 text-center text-white transition-colors rounded-lg bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-violet-400 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                >
-                                  {isVerifyingToken ? (
-                                    <>
-                                      <div className="i-ph:spinner animate-spin" />
-                                      Verifying...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <div className="i-ph:check-circle" />
-                                      Save Token
-                                    </>
-                                  )}
-                                </motion.button>
-                                {Cookies.get('supabaseAccessToken') && (
-                                  <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    onClick={() => setShowAccessTokenInput(false)}
-                                    className="px-4 py-2 text-white/70 hover:text-white transition-colors rounded-lg bg-white/5 hover:bg-white/10 border border-white/10"
-                                  >
-                                    Cancel
-                                  </motion.button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                        renderAuthSection()
                       ) : (
                         <>
                           <p className="text-sm text-white/70 mb-6 leading-relaxed">
