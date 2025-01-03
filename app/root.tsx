@@ -1,11 +1,13 @@
 import { useStore } from '@nanostores/react';
-import type { LinksFunction } from '@remix-run/cloudflare';
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from '@remix-run/react';
+import type { LinksFunction, LoaderFunction } from '@remix-run/cloudflare';
+import { json } from '@remix-run/cloudflare';
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from '@remix-run/react';
 import tailwindReset from '@unocss/reset/tailwind-compat.css?url';
 import { themeStore } from './lib/stores/theme';
 import { stripIndents } from './utils/stripIndent';
 import { createHead } from 'remix-island';
 import { useEffect } from 'react';
+import type { SupabaseEnv } from './config/supabase';
 
 import reactToastifyStyles from 'react-toastify/dist/ReactToastify.css?url';
 import globalStyles from './styles/index.scss?url';
@@ -62,7 +64,28 @@ export const Head = createHead(() => (
   </>
 ));
 
+export const loader: LoaderFunction = async ({ context }) => {
+  const env = {
+    SUPABASE_CLIENT_ID: context.SUPABASE_CLIENT_ID || '',
+    SUPABASE_CLIENT_SECRET: context.SUPABASE_CLIENT_SECRET || '',
+  };
+
+  const isSupabaseConfigured = Boolean(env.SUPABASE_CLIENT_ID && env.SUPABASE_CLIENT_SECRET);
+
+  if (!isSupabaseConfigured) {
+    console.error('Missing required Supabase environment variables');
+  }
+
+  return json({
+    ENV: {
+      env,
+      isSupabaseConfigured,
+    },
+  });
+};
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { ENV } = useLoaderData<{ ENV: { env: SupabaseEnv; isSupabaseConfigured: boolean } }>();
   const theme = useStore(themeStore);
 
   useEffect(() => {
@@ -71,9 +94,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {children}
-      <ScrollRestoration />
-      <Scripts />
+      <Head />
+      <body>
+        {/* Inject environment variables */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.ENV = ${JSON.stringify(ENV)};`,
+          }}
+        />
+        {children}
+        <ScrollRestoration />
+        <Scripts />
+      </body>
     </>
   );
 }
