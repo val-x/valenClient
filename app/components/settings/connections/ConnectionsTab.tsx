@@ -3,7 +3,6 @@ import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
 import { logStore } from '~/lib/stores/logs';
 import { Client, Account } from 'appwrite';
-import { createClient } from '@supabase/supabase-js';
 
 interface GitHubUserResponse {
   login: string;
@@ -26,10 +25,9 @@ export default function ConnectionsTab() {
   const [isAppwriteVerifying, setIsAppwriteVerifying] = useState(false);
 
   // Supabase states
-  const [supabaseUrl, setSupabaseUrl] = useState(Cookies.get('supabaseUrl') || '');
-  const [supabaseKey, setSupabaseKey] = useState(Cookies.get('supabaseKey') || '');
   const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
   const [isSupabaseVerifying, setIsSupabaseVerifying] = useState(false);
+  const [authWindow, setAuthWindow] = useState<Window | null>(null);
 
   useEffect(() => {
     // Check if credentials exist and verify them
@@ -41,10 +39,69 @@ export default function ConnectionsTab() {
       verifyAppwriteCredentials();
     }
 
-    if (supabaseUrl && supabaseKey) {
-      verifySupabaseCredentials();
+    // Check if we have a Supabase access token
+    const supabaseAccessToken = Cookies.get('supabaseAccessToken');
+
+    if (supabaseAccessToken) {
+      verifySupabaseConnection(supabaseAccessToken);
     }
-  }, []);
+
+    // Check for access_token in URL hash
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get('access_token');
+    const state = hashParams.get('state');
+
+    if (accessToken && state) {
+      const storedState = sessionStorage.getItem('supabase_auth_state');
+
+      if (state === storedState) {
+        verifySupabaseConnection(accessToken).then((isValid) => {
+          if (isValid) {
+            Cookies.set('supabaseAccessToken', accessToken, { expires: 30 });
+            toast.success('Successfully connected to Supabase');
+          }
+        });
+      } else {
+        toast.error('Invalid state parameter. Please try again.');
+      }
+
+      // Clean up URL and state
+      window.history.replaceState({}, document.title, window.location.pathname);
+      sessionStorage.removeItem('supabase_auth_state');
+    }
+
+    // Listen for messages from the popup window
+    const handleMessage = async (event: MessageEvent) => {
+      // Only handle messages from trusted origins
+      if (event.origin !== 'https://supabase.com') {
+        return;
+      }
+
+      try {
+        if (event.data?.type === 'supabase_token') {
+          const { accessToken } = event.data;
+
+          if (accessToken) {
+            Cookies.set('supabaseAccessToken', accessToken, { expires: 30 });
+
+            const isValid = await verifySupabaseConnection(accessToken);
+
+            if (isValid) {
+              toast.success('Successfully connected to Supabase');
+              authWindow?.close();
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error handling auth message:', error);
+        toast.error('Failed to complete authentication');
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    return () => window.removeEventListener('message', handleMessage);
+  }, [authWindow]);
 
   const verifyGitHubCredentials = async () => {
     setIsVerifying(true);
@@ -174,23 +231,30 @@ export default function ConnectionsTab() {
     toast.success('Appwrite connection removed successfully!');
   };
 
-  const verifySupabaseCredentials = async () => {
+  // TODO: This is not working error : Authorization window was closed. Please try again.
+  const verifySupabaseConnection = async (accessToken: string) => {
     setIsSupabaseVerifying(true);
 
     try {
-      const supabase = createClient(supabaseUrl, supabaseKey);
-      const { error } = await supabase.auth.getSession();
+      const response = await fetch('https://api.supabase.com/v1/organizations', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
-      if (error) {
-        throw error;
+      if (!response.ok) {
+        const errorData = (await response.json().catch(() => ({}))) as { message?: string };
+        throw new Error(errorData.message || 'Failed to verify Supabase connection');
       }
 
       setIsSupabaseConnected(true);
 
       return true;
     } catch (error) {
-      console.error('Error verifying Supabase credentials:', error);
+      console.error('Error verifying Supabase connection:', error);
       setIsSupabaseConnected(false);
+      Cookies.remove('supabaseAccessToken');
+      toast.error(error instanceof Error ? error.message : 'Failed to verify Supabase connection');
 
       return false;
     } finally {
@@ -198,35 +262,114 @@ export default function ConnectionsTab() {
     }
   };
 
-  const handleSaveSupabaseConnection = async () => {
-    if (!supabaseUrl || !supabaseKey) {
-      toast.error('Please provide both Supabase URL and API key');
-      return;
-    }
+  const initiateSupabaseAuth = () => {
+    try {
+      // Generate a random auth_id
+      const authId = crypto.randomUUID();
+      sessionStorage.setItem('supabase_auth_id', authId);
 
-    setIsSupabaseVerifying(true);
+      // Calculate popup window position
+      const width = 1000;
+      const height = 800;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
 
-    const isValid = await verifySupabaseCredentials();
+      // Use the Supabase Dashboard authorize endpoint
+      const authUrl = `https://supabase.com/dashboard/authorize?auth_id=${authId}`;
 
-    if (isValid) {
-      Cookies.set('supabaseUrl', supabaseUrl);
-      Cookies.set('supabaseKey', supabaseKey);
-      logStore.logSystem('Supabase connection settings updated', {
-        url: supabaseUrl,
-        hasKey: !!supabaseKey,
-      });
-      toast.success('Supabase credentials verified and saved successfully!');
-      setIsSupabaseConnected(true);
-    } else {
-      toast.error('Invalid Supabase credentials. Please check your URL and API key.');
+      // Open popup window to Supabase authorization
+      const popup = window.open(
+        authUrl,
+        'SupabaseAuth',
+        `width=${width},height=${height},left=${left},top=${top},popup=1,toolbar=0,location=1,menubar=0`,
+      );
+
+      if (popup) {
+        setAuthWindow(popup);
+
+        // Check if popup was blocked or closed
+        const checkPopup = setInterval(() => {
+          try {
+            // This will throw if the popup was closed
+            if (!popup || popup.closed) {
+              clearInterval(checkPopup);
+              setAuthWindow(null);
+              sessionStorage.removeItem('supabase_auth_id');
+
+              if (!isSupabaseConnected) {
+                toast.error('Authorization window was closed. Please try again.');
+              }
+            } else {
+              // Check if the popup URL contains the access token
+              try {
+                const popupLocation = popup.location;
+                const popupSearch = popupLocation.search;
+                const params = new URLSearchParams(popupSearch);
+                const returnedAuthId = params.get('auth_id');
+
+                if (returnedAuthId === authId) {
+                  // Exchange auth_id for access token
+                  fetch('https://api.supabase.com/v1/token', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      grant_type: 'authorization_code',
+                      auth_id: authId,
+                    }),
+                  })
+                    .then((response) => response.json())
+                    .then((data: unknown) => {
+                      const tokenData = data as { access_token?: string };
+
+                      if (tokenData.access_token) {
+                        Cookies.set('supabaseAccessToken', tokenData.access_token, { expires: 30 });
+                        verifySupabaseConnection(tokenData.access_token).then((isValid) => {
+                          if (isValid) {
+                            toast.success('Successfully connected to Supabase');
+                            popup.close();
+                          }
+                        });
+                      } else {
+                        throw new Error('No access token received');
+                      }
+                    })
+                    .catch((error) => {
+                      console.error('Error exchanging auth_id for token:', error);
+                      toast.error('Failed to complete authentication');
+                    })
+                    .finally(() => {
+                      clearInterval(checkPopup);
+                      setAuthWindow(null);
+                      sessionStorage.removeItem('supabase_auth_id');
+                    });
+                }
+              } catch {
+                // Ignore cross-origin errors while checking location
+              }
+            }
+          } catch (error: unknown) {
+            // Ignore cross-origin errors when checking popup location
+            const errorMessage = error instanceof Error ? error.toString() : String(error);
+
+            if (!errorMessage.includes('cross-origin')) {
+              console.error('Error checking popup status:', error);
+            }
+          }
+        }, 500);
+      } else {
+        toast.error('Popup was blocked. Please allow popups and try again.');
+      }
+    } catch (error: unknown) {
+      console.error('Error initiating Supabase authentication:', error);
+      toast.error('Failed to initiate Supabase authentication');
+      sessionStorage.removeItem('supabase_auth_id');
     }
   };
 
   const handleDisconnectSupabase = () => {
-    Cookies.remove('supabaseUrl');
-    Cookies.remove('supabaseKey');
-    setSupabaseUrl('');
-    setSupabaseKey('');
+    Cookies.remove('supabaseAccessToken');
     setIsSupabaseConnected(false);
     logStore.logSystem('Supabase connection removed');
     toast.success('Supabase connection removed successfully!');
@@ -372,34 +515,15 @@ export default function ConnectionsTab() {
           </span>
         </h3>
         <div className="space-y-4">
-          <div className="flex-1">
-            <label className="block text-sm text-bolt-elements-textSecondary mb-1">Project URL:</label>
-            <input
-              type="text"
-              value={supabaseUrl}
-              onChange={(e) => setSupabaseUrl(e.target.value)}
-              disabled={isSupabaseVerifying}
-              placeholder="https://your-project.supabase.co"
-              className="w-full bg-white dark:bg-bolt-elements-background-depth-4 relative px-2 py-1.5 rounded-md focus:outline-none placeholder-bolt-elements-textTertiary text-bolt-elements-textPrimary dark:text-bolt-elements-textPrimary border border-bolt-elements-borderColor disabled:opacity-50"
-            />
-          </div>
-          <div className="flex-1">
-            <label className="block text-sm text-bolt-elements-textSecondary mb-1">API Key:</label>
-            <input
-              type="password"
-              value={supabaseKey}
-              onChange={(e) => setSupabaseKey(e.target.value)}
-              disabled={isSupabaseVerifying}
-              placeholder="your-supabase-anon-key"
-              className="w-full bg-white dark:bg-bolt-elements-background-depth-4 relative px-2 py-1.5 rounded-md focus:outline-none placeholder-bolt-elements-textTertiary text-bolt-elements-textPrimary dark:text-bolt-elements-textPrimary border border-bolt-elements-borderColor disabled:opacity-50"
-            />
-          </div>
+          <p className="text-sm text-bolt-elements-textSecondary mb-4">
+            Connect your Supabase account to access your organization projects and resources.
+          </p>
         </div>
         <div className="flex mt-4 items-center">
           {!isSupabaseConnected ? (
             <button
-              onClick={handleSaveSupabaseConnection}
-              disabled={isSupabaseVerifying || !supabaseUrl || !supabaseKey}
+              onClick={initiateSupabaseAuth}
+              disabled={isSupabaseVerifying}
               className="bg-bolt-elements-button-primary-background rounded-lg px-4 py-2 mr-2 transition-colors duration-200 hover:bg-bolt-elements-button-primary-backgroundHover text-bolt-elements-button-primary-text disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
               {isSupabaseVerifying ? (
@@ -408,7 +532,10 @@ export default function ConnectionsTab() {
                   Verifying...
                 </>
               ) : (
-                'Connect'
+                <>
+                  <div className="i-ph:sign-in mr-2" />
+                  Connect with Supabase Dashboard
+                </>
               )}
             </button>
           ) : (
