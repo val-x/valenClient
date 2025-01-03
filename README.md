@@ -1,14 +1,14 @@
 # bolt.diy (Previously oTToDev)
+
 [![bolt.diy: AI-Powered Full-Stack Web Development in the Browser](./public/social_preview_index.jpg)](https://bolt.diy)
 
 Welcome to bolt.diy, the official open source version of Bolt.new (previously known as oTToDev and bolt.new ANY LLM), which allows you to choose the LLM that you use for each prompt! Currently, you can use OpenAI, Anthropic, Ollama, OpenRouter, Gemini, LMStudio, Mistral, xAI, HuggingFace, DeepSeek, or Groq models - and it is easily extended to use any other model supported by the Vercel AI SDK! See the instructions below for running this locally and extending it to include more models.
 
-Check the [bolt.diy Docs](https://stackblitz-labs.github.io/bolt.diy/) for more information. 
+Check the [bolt.diy Docs](https://stackblitz-labs.github.io/bolt.diy/) for more information.
 
 We have also launched an experimental agent called the "bolt.diy Expert" that can answer common questions about bolt.diy. Find it here on the [oTTomator Live Agent Studio](https://studio.ottomator.ai/).
 
 ref thinktank [thinktank](https://thinktank.ottomator.ai/t/deploying-bolt-diy-with-cloudflare-pages-the-easy-way/2403).
-
 
 bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMedin) but has quickly grown into a massive community effort to build the BEST open source AI coding assistant!
 
@@ -17,6 +17,7 @@ bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMed
 - [Join the Community](#join-the-community)
 - [Requested Additions](#requested-additions)
 - [Features](#features)
+- [Upcoming Features](#upcoming-features)
 - [Setup](#setup)
 - [Run the Application](#run-the-application)
 - [Available Scripts](#available-scripts)
@@ -27,7 +28,6 @@ bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMed
 ## Join the community
 
 [Join the bolt.diy community here, in the thinktank on ottomator.ai!](https://thinktank.ottomator.ai)
-
 
 ## Requested Additions
 
@@ -47,7 +47,7 @@ bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMed
 - ✅ xAI Grok Beta Integration (@milutinke)
 - ✅ LM Studio Integration (@karrot0)
 - ✅ HuggingFace Integration (@ahsan3219)
-- ✅ Val-X  terminal to see the output of LLM run commands (@thecodacus)
+- ✅ Val-X terminal to see the output of LLM run commands (@thecodacus)
 - ✅ Streaming of code output (@thecodacus)
 - ✅ Ability to revert code to earlier version (@wonderwhy-er)
 - ✅ Cohere Integration (@hasanraiyan)
@@ -89,20 +89,68 @@ bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMed
 - **Download projects as ZIP** for easy portability.
 - **Integration-ready Docker support** for a hassle-free setup.
 
-## Setup 
+## Upcoming Features
 
-If you're new to installing software from GitHub, don't worry! If you encounter any issues, feel free to submit an "issue" using the provided links or improve this documentation by forking the repository, editing the instructions, and submitting a pull request. The following instruction will help you get the stable branch up and running on your local machine in no time.  
+### ⬜ Client-Side Processing
+
+Experience enhanced performance with our innovative client-side approach. By utilizing your local computing resources (with permission), our `AI model operates in a distributed cluster environment`, optimizing processing speed and efficiency.
+
+### ⬜ Backend Integration
+
+Seamlessly connect with `Supabase` and `Appwrite` to implement robust backend functionality. Whether you prefer self-hosted or cloud-based solutions, this integration enables rapid backend deployment with enterprise-grade security and scalability.
+
+### ⬜ Advanced Publishing
+
+`Deploy your projects` with confidence using our sophisticated publishing system. Features include:
+
+- Custom domain support with HTTPS encryption
+- Enhanced security through additional protection layers
+- Horizontal scaling capabilities via Cloudflare or Vercel integration
+- Enterprise-grade performance optimization
+
+### ⬜ Extension
+
+Enhance your development experience with our upcoming extensions:
+
+- **VS Code Integration**: Seamlessly work with your favorite IDE while leveraging Val-X AI capabilities
+- **Browser Extensions**: Quick access to Val-X features directly from your browser
+- **Custom Plugin System**: Create and share your own extensions to extend Val-X functionality
+- **API Integration Tools**: Build and deploy custom integrations with third-party services
+
+### ⬜ Business Automation
+
+Streamline your workflow with our n8n integration for business process automation:
+
+- **Workflow Automation**: Create and manage complex workflows using n8n's visual workflow editor
+- **API Integration**: Connect with 200+ services and APIs through pre-built n8n nodes
+- **Custom Triggers**: Set up automated actions based on events in your bolt.diy projects
+- **Data Transformation**: Process and transform data between different systems automatically
+- **Scheduled Tasks**: Automate recurring tasks and maintenance operations
+- **Real-time Monitoring**: Track and analyze workflow performance with detailed logs and metrics
+
+### ⬜ LLM Notebook
+
+Interactive development environment for LLM experimentation and development:
+
+- **Interactive Cells**: Write and execute code, markdown, and LLM prompts in a notebook interface
+- **Real-time Model Testing**: Test different LLM models and compare their responses directly
+- **Prompt Engineering**: Develop and refine prompts with immediate feedback
+- **Version Control**: Track changes in your prompts and experiments over time
+- **Export & Share**: Export your notebooks as markdown or share them with the community
+- **Template Library**: Access a collection of pre-built prompt templates and examples
+- **Visualization Tools**: Analyze and visualize model responses and performance metrics
+
+## Setup
+
+If you're new to installing software from GitHub, don't worry! If you encounter any issues, feel free to submit an "issue" using the provided links or improve this documentation by forking the repository, editing the instructions, and submitting a pull request. The following instruction will help you get the stable branch up and running on your local machine in no time.
 
 Let's get you up and running with the stable version of Bolt.DIY!
 
 ## Quick Download
 
-[![Download Latest Release](https://img.shields.io/github/v/release/stackblitz-labs/bolt.diy?label=Download%20Bolt&sort=semver)](https://github.com/stackblitz-labs/bolt.diy/releases/latest) ← Click here to go the the latest release version! 
+[![Download Latest Release](https://img.shields.io/github/v/release/stackblitz-labs/bolt.diy?label=Download%20Bolt&sort=semver)](https://github.com/stackblitz-labs/bolt.diy/releases/latest) ← Click here to go the the latest release version!
 
 - Next **click source.zip**
-
-
-
 
 ## Prerequisites
 
@@ -136,16 +184,19 @@ You have two options for running Bolt.DIY: directly on your machine or using Doc
 ### Option 1: Direct Installation (Recommended for Beginners)
 
 1. **Install Package Manager (pnpm)**:
+
    ```bash
    npm install -g pnpm
    ```
 
 2. **Install Project Dependencies**:
+
    ```bash
    pnpm install
    ```
 
 3. **Start the Application**:
+
    ```bash
    pnpm run dev
    ```
@@ -157,11 +208,13 @@ You have two options for running Bolt.DIY: directly on your machine or using Doc
 This option requires some familiarity with Docker but provides a more isolated environment.
 
 #### Additional Prerequisite
+
 - Install Docker: [Download Docker](https://www.docker.com/)
 
 #### Steps:
 
 1. **Build the Docker Image**:
+
    ```bash
    # Using npm script:
    npm run dockerbuild
@@ -174,9 +227,6 @@ This option requires some familiarity with Docker but provides a more isolated e
    ```bash
    docker-compose --profile development up
    ```
-
-
-
 
 ## Configuring API Keys and Providers
 
@@ -206,6 +256,7 @@ For providers that support custom base URLs (such as Ollama or LM Studio), follo
 > **Note**: Custom base URLs are particularly useful when running local instances of AI models or using custom API endpoints.
 
 ### Supported Providers
+
 - Ollama
 - LM Studio
 - OpenAILike
@@ -213,23 +264,27 @@ For providers that support custom base URLs (such as Ollama or LM Studio), follo
 ## Setup Using Git (For Developers only)
 
 This method is recommended for developers who want to:
+
 - Contribute to the project
 - Stay updated with the latest changes
 - Switch between different versions
 - Create custom modifications
 
 #### Prerequisites
+
 1. Install Git: [Download Git](https://git-scm.com/downloads)
 
 #### Initial Setup
 
 1. **Clone the Repository**:
+
    ```bash
    # Using HTTPS
    git clone https://github.com/stackblitz-labs/bolt.diy.git
    ```
 
 2. **Navigate to Project Directory**:
+
    ```bash
    cd bolt.diy
    ```
@@ -239,6 +294,7 @@ This method is recommended for developers who want to:
    git checkout main
    ```
 4. **Install Dependencies**:
+
    ```bash
    pnpm install
    ```
@@ -253,16 +309,19 @@ This method is recommended for developers who want to:
 To get the latest changes from the repository:
 
 1. **Save Your Local Changes** (if any):
+
    ```bash
    git stash
    ```
 
 2. **Pull Latest Updates**:
+
    ```bash
    git pull origin main
    ```
 
 3. **Update Dependencies**:
+
    ```bash
    pnpm install
    ```
@@ -277,6 +336,7 @@ To get the latest changes from the repository:
 If you encounter issues:
 
 1. **Clean Installation**:
+
    ```bash
    # Remove node modules and lock files
    rm -rf node_modules pnpm-lock.yaml
