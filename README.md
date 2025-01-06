@@ -6,6 +6,8 @@ Welcome to bolt.diy, the official open source version of Bolt.new (previously kn
 
 Check the [bolt.diy Docs](https://stackblitz-labs.github.io/bolt.diy/) for more information.
 
+Also [this pinned post in our community](https://thinktank.ottomator.ai/t/videos-tutorial-helpful-content/3243) has a bunch of incredible resources for running and deploying bolt.diy yourself!
+
 We have also launched an experimental agent called the "bolt.diy Expert" that can answer common questions about bolt.diy. Find it here on the [oTTomator Live Agent Studio](https://studio.ottomator.ai/).
 
 ref thinktank [thinktank](https://thinktank.ottomator.ai/t/deploying-bolt-diy-with-cloudflare-pages-the-easy-way/2403).
@@ -28,6 +30,7 @@ bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMed
 ## Join the community
 
 [Join the bolt.diy community here, in the thinktank on ottomator.ai!](https://thinktank.ottomator.ai)
+
 
 ## Requested Additions
 
@@ -67,7 +70,7 @@ bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMed
 - ✅ Detect terminal Errors and ask Val-X to fix it (@thecodacus)
 - ✅ Detect preview Errors and ask Val-X to fix it (@wonderwhy-er)
 - ✅ Add Starter Template Options (@thecodacus)
-- ⬜ **HIGH PRIORITY** - Prevent Val-X from rewriting files as often (file locking and diffs)
+- ⬜ **HIGH PRIORITY** - Prevent bolt from rewriting files as often (file locking and diffs)
 - ⬜ **HIGH PRIORITY** - Better prompting for smaller LLMs (code window sometimes doesn't start)
 - ⬜ **HIGH PRIORITY** - Run agents in the backend as opposed to a single model call
 - ⬜ Deploy directly to Vercel/Netlify/other similar platforms
@@ -76,8 +79,6 @@ bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMed
 - ⬜ Upload documents for knowledge - UI design templates, a code base to reference coding style, etc.
 - ⬜ Voice prompting
 - ⬜ Azure Open AI API Integration
-- ✅ Perplexity Integration (@meetpateltech)
-- ✅ AWS Bedrock Integration (@kunjabijukchhe)
 - ⬜ Vertex AI Integration
 
 ## Features
