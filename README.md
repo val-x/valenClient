@@ -93,8 +93,6 @@ project, please check the [project management guide](./PROJECT.md) to get starte
 - ⬜ Upload documents for knowledge - UI design templates, a code base to reference coding style, etc.
 - ⬜ Voice prompting
 - ⬜ Azure Open AI API Integration
-- ✅ Perplexity Integration (@meetpateltech)
-- ✅ AWS Bedrock Integration (@kunjabijukchhe)
 - ⬜ Vertex AI Integration
 - ⬜ Granite Integration 
 - ⬜ Popout Window for Web Container
