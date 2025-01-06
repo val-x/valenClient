@@ -25,6 +25,8 @@ Val-X allows you to choose the LLM that you use for each prompt! Currently, you 
 
 [Join the community!](https://thinktank.ottomator.ai)
 
+Also [this pinned post in our community](https://thinktank.ottomator.ai/t/videos-tutorial-helpful-content/3243) has a bunch of incredible resources for running and deploying bolt.diy yourself!
+
 ---
 
 ## Features
