@@ -16,9 +16,9 @@ const menuVariants = {
   closed: {
     opacity: 0,
     visibility: 'hidden',
-    left: '-150px',
+    left: '-350px',
     transition: {
-      duration: 0.2,
+      duration: 0.3,
       ease: cubicEasingFn,
     },
   },
@@ -27,7 +27,7 @@ const menuVariants = {
     visibility: 'initial',
     left: 0,
     transition: {
-      duration: 0.2,
+      duration: 0.3,
       ease: cubicEasingFn,
     },
   },
@@ -41,14 +41,14 @@ function CurrentDateTime() {
   useEffect(() => {
     const timer = setInterval(() => {
       setDateTime(new Date());
-    }, 60000); // Update every minute
+    }, 60000);
 
     return () => clearInterval(timer);
   }, []);
 
   return (
-    <div className="flex items-center gap-2 px-4 py-3 font-bold text-gray-700 dark:text-gray-300 border-b border-bolt-elements-borderColor">
-      <div className="h-4 w-4 i-ph:clock-thin" />
+    <div className="flex items-center gap-2 px-6 py-4 font-medium text-gray-700 dark:text-gray-200 border-b border-bolt-elements-borderColor bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-pink-500/10">
+      <div className="h-4 w-4 i-ph:clock-thin text-cyan-500" />
       {dateTime.toLocaleDateString()} {dateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
     </div>
   );
@@ -143,40 +143,46 @@ export const Menu = () => {
       initial="closed"
       animate={open ? 'open' : 'closed'}
       variants={menuVariants}
-      className="flex selection-accent flex-col side-menu fixed top-0 w-[350px] h-full bg-bolt-elements-background-depth-2 border-r rounded-r-3xl border-bolt-elements-borderColor z-sidebar shadow-xl shadow-bolt-elements-sidebar-dropdownShadow text-sm"
+      className="flex selection-accent flex-col side-menu fixed top-0 w-[350px] h-full bg-gradient-to-b from-bolt-elements-background-depth-2 to-bolt-elements-background-depth-3 border-r border-bolt-elements-borderColor z-sidebar shadow-2xl backdrop-blur-xl text-sm"
     >
-      <div className="h-[60px]" /> {/* Spacer for top margin */}
+      <div className="h-[60px] bg-gradient-to-r from-cyan-500/5 via-purple-500/5 to-pink-500/5" />
       <CurrentDateTime />
       <div className="flex-1 flex flex-col h-full w-full overflow-hidden">
-        <div className="p-4 select-none">
+        <div className="p-6 select-none space-y-4">
           <a
             href="/"
-            className="flex gap-2 items-center bg-bolt-elements-sidebar-buttonBackgroundDefault text-bolt-elements-sidebar-buttonText hover:bg-bolt-elements-sidebar-buttonBackgroundHover rounded-md p-2 transition-theme mb-4"
+            className="flex gap-3 items-center bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white hover:shadow-lg hover:shadow-purple-500/20 rounded-xl p-3 transition-all duration-300 group"
           >
-            <span className="inline-block i-bolt:chat scale-110" />
-            Start new chat
+            <span className="inline-block i-bolt:chat scale-110 group-hover:rotate-12 transition-transform" />
+            <span className="font-medium">Start new chat</span>
           </a>
           <div className="relative w-full">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <div className="i-ph:magnifying-glass h-4 w-4" />
+            </div>
             <input
-              className="w-full bg-white dark:bg-bolt-elements-background-depth-4 relative px-2 py-1.5 rounded-md focus:outline-none placeholder-bolt-elements-textTertiary text-bolt-elements-textPrimary dark:text-bolt-elements-textPrimary border border-bolt-elements-borderColor"
+              className="w-full bg-white/5 relative pl-10 pr-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 placeholder-bolt-elements-textTertiary text-bolt-elements-textPrimary dark:text-bolt-elements-textPrimary border border-bolt-elements-borderColor/50 transition-all duration-300"
               type="search"
-              placeholder="Search"
+              placeholder="Search chats..."
               onChange={handleSearchChange}
               aria-label="Search chats"
             />
           </div>
         </div>
-        <div className="text-bolt-elements-textPrimary font-medium pl-6 pr-5 my-2">Your Chats</div>
-        <div className="flex-1 overflow-auto pl-4 pr-5 pb-5">
+        <div className="text-bolt-elements-textPrimary font-medium px-6 my-2 flex items-center gap-2">
+          <div className="h-1 w-1 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500" />
+          Your Chats
+        </div>
+        <div className="flex-1 overflow-auto px-6 pb-5">
           {filteredList.length === 0 && (
-            <div className="pl-2 text-bolt-elements-textTertiary">
+            <div className="text-bolt-elements-textTertiary text-center py-8">
               {list.length === 0 ? 'No previous conversations' : 'No matches found'}
             </div>
           )}
           <DialogRoot open={dialogContent !== null}>
             {binDates(filteredList).map(({ category, items }) => (
-              <div key={category} className="mt-4 first:mt-0 space-y-1">
-                <div className="text-bolt-elements-textTertiary sticky top-0 z-1 bg-bolt-elements-background-depth-2 pl-2 pt-2 pb-1">
+              <div key={category} className="mt-4 first:mt-0 space-y-1.5">
+                <div className="text-bolt-elements-textTertiary sticky top-0 z-1 bg-gradient-to-r from-bolt-elements-background-depth-2 to-bolt-elements-background-depth-3 pt-2 pb-1 font-medium text-xs uppercase tracking-wider">
                   {category}
                 </div>
                 {items.map((item) => (
@@ -221,7 +227,7 @@ export const Menu = () => {
             </Dialog>
           </DialogRoot>
         </div>
-        <div className="flex items-center justify-between border-t border-bolt-elements-borderColor p-4">
+        <div className="flex items-center justify-between border-t border-bolt-elements-borderColor/50 p-6 bg-gradient-to-r from-cyan-500/5 via-purple-500/5 to-pink-500/5">
           <SettingsButton onClick={() => setIsSettingsOpen(true)} />
           <ThemeSwitch />
         </div>

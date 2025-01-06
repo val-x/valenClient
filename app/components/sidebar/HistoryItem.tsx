@@ -28,7 +28,7 @@ export function HistoryItem({ item, onDelete, onDuplicate, exportChat }: History
     <form onSubmit={handleSubmit} className="flex-1 flex items-center">
       <input
         type="text"
-        className="flex-1 bg-bolt-elements-background-depth-1 text-bolt-elements-textPrimary rounded px-2 mr-2"
+        className="flex-1 bg-white/5 text-bolt-elements-textPrimary rounded-lg px-3 py-1.5 mr-2 border border-bolt-elements-borderColor/50 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
         autoFocus
         value={currentDescription}
         onChange={handleChange}
@@ -37,7 +37,7 @@ export function HistoryItem({ item, onDelete, onDuplicate, exportChat }: History
       />
       <button
         type="submit"
-        className="i-ph:check scale-110 hover:text-bolt-elements-item-contentAccent"
+        className="i-ph:check scale-110 hover:text-cyan-500 transition-colors"
         onMouseDown={handleSubmit}
       />
     </form>
@@ -46,22 +46,28 @@ export function HistoryItem({ item, onDelete, onDuplicate, exportChat }: History
   return (
     <div
       className={classNames(
-        'group rounded-md text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-bolt-elements-background-depth-3 overflow-hidden flex justify-between items-center px-2 py-1',
-        { '[&&]:text-bolt-elements-textPrimary bg-bolt-elements-background-depth-3': isActiveChat },
+        'group rounded-xl text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary hover:bg-white/5 overflow-hidden flex justify-between items-center px-3 py-2 transition-all duration-200',
+        {
+          '[&&]:text-bolt-elements-textPrimary bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-pink-500/10 border border-purple-500/20':
+            isActiveChat,
+        },
       )}
     >
       {editing ? (
         renderDescriptionForm
       ) : (
         <a href={`/chat/${item.urlId}`} className="flex w-full relative truncate block">
-          {currentDescription}
+          <div className="flex items-center gap-2 w-full">
+            <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <span className="truncate">{currentDescription}</span>
+          </div>
           <div
             className={classNames(
               'absolute right-0 z-1 top-0 bottom-0 bg-gradient-to-l from-bolt-elements-background-depth-2 group-hover:from-bolt-elements-background-depth-3 box-content pl-3 to-transparent w-10 flex justify-end group-hover:w-22 group-hover:from-99%',
-              { 'from-bolt-elements-background-depth-3 w-10 ': isActiveChat },
+              { 'from-bolt-elements-background-depth-3 w-10': isActiveChat },
             )}
           >
-            <div className="flex items-center p-1 text-bolt-elements-textSecondary opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center p-1 text-bolt-elements-textSecondary opacity-0 group-hover:opacity-100 transition-all duration-200 gap-1">
               <ChatActionButton
                 toolTipContent="Export chat"
                 icon="i-ph:download-simple"
@@ -89,7 +95,7 @@ export function HistoryItem({ item, onDelete, onDuplicate, exportChat }: History
                 <ChatActionButton
                   toolTipContent="Delete chat"
                   icon="i-ph:trash"
-                  className="[&&]:hover:text-bolt-elements-button-danger-text"
+                  className="[&&]:hover:text-red-500"
                   onClick={(event) => {
                     event.preventDefault();
                     onDelete?.(event);
@@ -125,7 +131,7 @@ const ChatActionButton = forwardRef(
         <button
           ref={ref}
           type="button"
-          className={`scale-110 mr-2 hover:text-bolt-elements-item-contentAccent ${icon} ${className ? className : ''}`}
+          className={`scale-110 hover:text-cyan-500 transition-colors ${icon} ${className ? className : ''}`}
           onClick={onClick}
         />
       </WithTooltip>
