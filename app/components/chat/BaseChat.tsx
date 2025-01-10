@@ -294,7 +294,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         setIsModelLoading('all');
         initializeModelList({ apiKeys: parsedApiKeys, providerSettings })
           .then((modelList) => {
-            // console.log('Model List: ', modelList);
             setModelList(modelList);
           })
           .catch((error) => {
@@ -304,7 +303,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             setIsModelLoading(undefined);
           });
       }
-    }, [providerList]);
+    }, [providerList, provider]);
 
     const onApiKeysChange = async (providerName: string, apiKey: string) => {
       const newApiKeys = { ...apiKeys, [providerName]: apiKey };
