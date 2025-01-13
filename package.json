@@ -35,12 +35,12 @@
     "node": ">=18.18.0"
   },
   "dependencies": {
+    "@ai-sdk/amazon-bedrock": "1.0.6",
     "@ai-sdk/anthropic": "^0.0.39",
     "@ai-sdk/cohere": "^1.0.3",
     "@ai-sdk/google": "^0.0.52",
     "@ai-sdk/mistral": "^0.0.43",
     "@ai-sdk/openai": "^0.0.66",
-    "@ai-sdk/amazon-bedrock": "1.0.6",
     "@codemirror/autocomplete": "^6.18.3",
     "@codemirror/commands": "^6.7.1",
     "@codemirror/lang-cpp": "^6.0.2",
@@ -60,6 +60,7 @@
     "@iconify-json/ph": "^1.2.1",
     "@iconify-json/svg-spinners": "^1.2.1",
     "@lezer/highlight": "^1.2.1",
+    "@modelcontextprotocol/sdk": "^1.1.1",
     "@nanostores/react": "^0.7.3",
     "@octokit/rest": "^21.0.2",
     "@octokit/types": "^13.6.2",

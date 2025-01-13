@@ -74,6 +74,7 @@ bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMed
 - ⬜ **HIGH PRIORITY** - Prevent Val-X from rewriting files as often (file locking and diffs)
 - ⬜ **HIGH PRIORITY** - Better prompting for smaller LLMs (code window sometimes doesn't start)
 - ⬜ **HIGH PRIORITY** - Run agents in the backend as opposed to a single model call
+- ⬜ **HIGH PRIORITY** - Add [modelcontextprotocol](https://github.com/modelcontextprotocol/typescript-sdk)
 - ⬜ Deploy directly to Vercel/Netlify/other similar platforms
 - ⬜ Have LLM plan the project in a MD file for better results/transparency
 - ⬜ VSCode Integration with git-like confirmations
