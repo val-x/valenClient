@@ -8,7 +8,6 @@ interface GitHubUserResponse {
   login: string;
   id: number;
   [key: string]: any;
-  [key: string]: any;
 }
 
 export default function ConnectionsTab() {
