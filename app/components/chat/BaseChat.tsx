@@ -686,8 +686,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           onClick={() => setIsModelSettingsOpen(!isModelSettingsOpen)}
                           disabled={!providerList || providerList.length === 0}
                         >
+                          {<span className="text-xs">{model}</span>}
                           <div className={`i-ph:caret-${isModelSettingsOpen ? 'right' : 'down'} text-lg`} />
-                          {isModelSettingsOpen ? <span className="text-xs">{model}</span> : <span />}
                         </IconButton>
                       </div>
                       {input.length > 3 ? (

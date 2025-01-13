@@ -256,14 +256,12 @@ export default function DataTab() {
 
     // Handle Bolt export format (multiple chats)
     if (data.chats && Array.isArray(data.chats)) {
-      return data.chats.map((chat: { id?: string; messages: Message[]; description?: string; urlId?: string }) => {
-        return {
-          id: chat.id || crypto.randomUUID(),
-          messages: chat.messages,
-          description: chat.description || 'Imported Chat',
-          urlId: chat.urlId,
-        };
-      });
+      return data.chats.map((chat: { id?: string; messages: Message[]; description?: string; urlId?: string }) => ({
+        id: chat.id || crypto.randomUUID(),
+        messages: chat.messages,
+        description: chat.description || 'Imported Chat',
+        urlId: chat.urlId,
+      }));
     }
 
     console.error('No matching format found for:', data);
