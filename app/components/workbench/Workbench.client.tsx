@@ -19,6 +19,7 @@ import { Preview } from './Preview';
 import useViewport from '~/lib/hooks';
 import Cookies from 'js-cookie';
 import { SiSupabase } from 'react-icons/si';
+import { SettingsWindow } from '~/components/settings/SettingsWindow';
 
 interface WorkspaceProps {
   chatStarted?: boolean;
@@ -80,11 +81,17 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
   const [selectedOrg, setSelectedOrg] = useState<SupabaseOrg | null>(null);
   const [isLoadingOrgs, setIsLoadingOrgs] = useState(false);
   const [showAccessTokenInput, setShowAccessTokenInput] = useState(false);
+  const [showExtensionsPopover, setShowExtensionsPopover] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<
+    'data' | 'providers' | 'features' | 'debug' | 'event-logs' | 'connection'
+  >('connection');
 
   const supabaseButtonRef = useRef<HTMLDivElement>(null);
   const orgButtonRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const projectsPopoverRef = useRef<HTMLDivElement>(null);
+  const extensionsPopoverRef = useRef<HTMLDivElement>(null);
 
   // Function to initiate OAuth flow
   const initiateOAuthFlow = () => {
@@ -394,30 +401,142 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
                         Download Code
                       </span>
                     </PanelHeaderButton>
-                    <div ref={supabaseButtonRef}>
+                    <div className="relative">
                       <PanelHeaderButton
                         className="mr-1 text-sm bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 hover:from-cyan-500/30 hover:via-violet-500/30 hover:to-fuchsia-500/30 border border-white/10 transition-colors"
-                        onClick={() => setShowSupabasePopover(!showSupabasePopover)}
+                        onClick={() => setShowExtensionsPopover(true)}
                       >
-                        <SiSupabase className="text-cyan-400 group-hover:text-cyan-300" />
+                        <div className="i-ph:puzzle-piece text-cyan-400 group-hover:text-cyan-300" />
                         <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-                          Supabase
+                          Extensions
                         </span>
-                        <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-white/10 rounded-full">Beta</span>
+                        <div className="i-ph:caret-down ml-1 text-cyan-400 group-hover:text-cyan-300" />
                       </PanelHeaderButton>
+
+                      {showExtensionsPopover && (
+                        <motion.div
+                          ref={extensionsPopoverRef}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+                          onClick={(e) => {
+                            if (e.target === e.currentTarget) {
+                              setShowExtensionsPopover(false);
+                            }
+                          }}
+                        >
+                          <motion.div
+                            className="w-96 rounded-2xl bg-gradient-to-br from-black/90 via-black/95 to-black/98 border border-white/10 shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex items-center justify-between p-4 border-b border-white/10">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 backdrop-blur-sm border border-white/5">
+                                  <div className="i-ph:puzzle-piece text-2xl text-white" />
+                                </div>
+                                <div>
+                                  <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+                                    Extensions
+                                  </h2>
+                                  <p className="text-xs text-white/50">Add functionality to your workspace</p>
+                                </div>
+                              </div>
+                              <button
+                                className="p-1 rounded-lg hover:bg-white/5 transition-colors"
+                                onClick={() => setShowExtensionsPopover(false)}
+                              >
+                                <div className="i-ph:x text-lg text-white/70 hover:text-white/90" />
+                              </button>
+                            </div>
+
+                            <div className="p-4 space-y-2">
+                              <PanelHeaderButton
+                                className="w-full text-sm bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 hover:from-cyan-500/30 hover:via-violet-500/30 hover:to-fuchsia-500/30 border border-white/10 transition-colors"
+                                onClick={() => {
+                                  setShowExtensionsPopover(false);
+                                  setShowSupabasePopover(!showSupabasePopover);
+                                }}
+                              >
+                                <SiSupabase className="text-cyan-400 group-hover:text-cyan-300" />
+                                <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+                                  Supabase
+                                </span>
+                                <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-white/10 rounded-full">Beta</span>
+                              </PanelHeaderButton>
+
+                              <PanelHeaderButton
+                                className="w-full text-sm bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 hover:from-cyan-500/30 hover:via-violet-500/30 hover:to-fuchsia-500/30 border border-white/10 transition-colors"
+                                onClick={() => {
+                                  setShowExtensionsPopover(false);
+
+                                  /* TODO: Implement publish */
+                                }}
+                              >
+                                <div className="i-ph:rocket-launch text-lg text-cyan-400 group-hover:text-cyan-300" />
+                                <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+                                  Publish
+                                </span>
+                                <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-white/10 rounded-full">Beta</span>
+                              </PanelHeaderButton>
+
+                              <PanelHeaderButton
+                                className="w-full text-sm bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 hover:from-cyan-500/30 hover:via-violet-500/30 hover:to-fuchsia-500/30 border border-white/10 transition-colors"
+                                onClick={() => {
+                                  setShowExtensionsPopover(false);
+
+                                  const repoName = prompt(
+                                    'Please enter a name for your new GitHub repository:',
+                                    'bolt-generated-project',
+                                  );
+
+                                  if (!repoName) {
+                                    alert('Repository name is required. Push to GitHub cancelled.');
+                                    return;
+                                  }
+
+                                  const githubUsername = Cookies.get('githubUsername');
+                                  const githubToken = Cookies.get('githubToken');
+
+                                  if (!githubUsername || !githubToken) {
+                                    const usernameInput = prompt('Please enter your GitHub username:');
+                                    const tokenInput = prompt('Please enter your GitHub personal access token:');
+
+                                    if (!usernameInput || !tokenInput) {
+                                      alert('GitHub username and token are required. Push to GitHub cancelled.');
+                                      return;
+                                    }
+
+                                    workbenchStore.pushToGitHub(repoName, usernameInput, tokenInput);
+                                  } else {
+                                    workbenchStore.pushToGitHub(repoName, githubUsername, githubToken);
+                                  }
+                                }}
+                              >
+                                <div className="i-ph:github-logo" />
+                                <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+                                  Push to GitHub
+                                </span>
+                              </PanelHeaderButton>
+
+                              <PanelHeaderButton
+                                className="w-full text-sm bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 hover:from-cyan-500/30 hover:via-violet-500/30 hover:to-fuchsia-500/30 border border-white/10 transition-colors"
+                                onClick={() => {
+                                  setShowExtensionsPopover(false);
+                                  setSettingsTab('connection');
+                                  setIsSettingsOpen(true);
+                                }}
+                              >
+                                <div className="i-ph:plus-circle text-cyan-400 group-hover:text-cyan-300" />
+                                <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+                                  Add More...
+                                </span>
+                              </PanelHeaderButton>
+                            </div>
+                          </motion.div>
+                        </motion.div>
+                      )}
                     </div>
-                    <PanelHeaderButton
-                      className="mr-1 text-sm bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 hover:from-cyan-500/30 hover:via-violet-500/30 hover:to-fuchsia-500/30 border border-white/10 transition-colors"
-                      onClick={() => {
-                        /* TODO: Implement publish */
-                      }}
-                    >
-                      <div className="i-ph:rocket-launch text-lg text-cyan-400 group-hover:text-cyan-300" />
-                      <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-                        Publish
-                      </span>
-                      <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-white/10 rounded-full">Beta</span>
-                    </PanelHeaderButton>
                     <PanelHeaderButton
                       className="mr-1 text-sm bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 hover:from-cyan-500/30 hover:via-violet-500/30 hover:to-fuchsia-500/30 border border-white/10 transition-colors"
                       onClick={handleSyncFiles}
@@ -442,40 +561,6 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
                       <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
                         Toggle Terminal
                       </span>
-                    </PanelHeaderButton>
-                    <PanelHeaderButton
-                      className="mr-1 text-sm bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 hover:from-cyan-500/30 hover:via-violet-500/30 hover:to-fuchsia-500/30 border border-white/10 transition-colors"
-                      onClick={() => {
-                        const repoName = prompt(
-                          'Please enter a name for your new GitHub repository:',
-                          'bolt-generated-project',
-                        );
-
-                        if (!repoName) {
-                          alert('Repository name is required. Push to GitHub cancelled.');
-                          return;
-                        }
-
-                        const githubUsername = Cookies.get('githubUsername');
-                        const githubToken = Cookies.get('githubToken');
-
-                        if (!githubUsername || !githubToken) {
-                          const usernameInput = prompt('Please enter your GitHub username:');
-                          const tokenInput = prompt('Please enter your GitHub personal access token:');
-
-                          if (!usernameInput || !tokenInput) {
-                            alert('GitHub username and token are required. Push to GitHub cancelled.');
-                            return;
-                          }
-
-                          workbenchStore.pushToGitHub(repoName, usernameInput, tokenInput);
-                        } else {
-                          workbenchStore.pushToGitHub(repoName, githubUsername, githubToken);
-                        }
-                      }}
-                    >
-                      <div className="i-ph:github-logo" />
-                      Push to GitHub
                     </PanelHeaderButton>
                   </div>
                 )}
@@ -519,22 +604,22 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
         {showSupabasePopover && (
           <motion.div
             ref={popoverRef}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="fixed right-[calc(var(--workbench-inner-width)-24rem)] mt-2 w-[90vw] sm:w-96 rounded-2xl bg-gradient-to-br from-black/80 via-black/90 to-black/95 border border-white/10 shadow-2xl z-[100] backdrop-blur-2xl"
-            style={{
-              top: supabaseButtonRef.current?.getBoundingClientRect().bottom || 0,
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowSupabasePopover(false);
+              }
             }}
           >
-            <div className="p-6 relative overflow-hidden">
-              {/* Animated background gradients */}
-              <div className="absolute inset-0">
-                <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-cyan-500/20 blur-3xl animate-pulse" />
-                <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-violet-500/20 blur-3xl animate-pulse delay-300" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-fuchsia-500/20 blur-3xl animate-pulse delay-700" />
-              </div>
-              <div className="relative">
-                <div className="flex items-center gap-3 mb-6">
+            <motion.div
+              className="w-[32rem] rounded-2xl bg-gradient-to-br from-black/90 via-black/95 to-black/98 border border-white/10 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-4 border-b border-white/10">
+                <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 backdrop-blur-sm border border-white/5">
                     <SiSupabase className="text-2xl text-white" />
                   </div>
@@ -545,7 +630,15 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
                     <p className="text-xs text-white/50">Database & Authentication</p>
                   </div>
                 </div>
+                <button
+                  className="p-1 rounded-lg hover:bg-white/5 transition-colors"
+                  onClick={() => setShowSupabasePopover(false)}
+                >
+                  <div className="i-ph:x text-lg text-white/70 hover:text-white/90" />
+                </button>
+              </div>
 
+              <div className="p-6 space-y-4">
                 {!Cookies.get('supabaseAccessToken') || showAccessTokenInput ? (
                   <div className="space-y-4">
                     <div className="p-4 rounded-xl bg-gradient-to-r from-white/5 to-transparent border border-white/10">
@@ -592,56 +685,65 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
                       </motion.button>
                     </div>
 
-                    <motion.div
-                      ref={orgButtonRef}
-                      whileHover={{ scale: 1.02 }}
-                      className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-white/5 to-transparent hover:from-white/10 hover:to-white/5 border border-white/10 cursor-pointer mb-4 group transition-all duration-300"
-                      onMouseEnter={() => setShowProjectsPopover(true)}
-                      onMouseLeave={(e) => {
-                        const rect = projectsPopoverRef.current?.getBoundingClientRect();
+                    <div className="space-y-2">
+                      {isLoadingOrgs ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="animate-spin text-2xl text-cyan-400">
+                            <div className="i-ph:circle-notch" />
+                          </div>
+                        </div>
+                      ) : organizations.length > 0 ? (
+                        organizations.map((org) => (
+                          <motion.div
+                            key={org.id}
+                            whileHover={{ scale: 1.02 }}
+                            className={classNames(
+                              'flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-white/5 to-transparent hover:from-white/10 hover:to-white/5 border border-white/10 cursor-pointer group transition-all duration-300',
+                              selectedOrg?.id === org.id ? 'border-cyan-500/50' : 'border-white/10',
+                            )}
+                            onClick={() => handleSelectOrg(org)}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <span className="text-lg text-white group-hover:text-cyan-300 transition-colors truncate block">
+                                {org.name}
+                              </span>
+                              <span className="text-xs text-white/50 group-hover:text-white/70 transition-colors">
+                                {org.billing_email}
+                              </span>
+                            </div>
+                            {selectedOrg?.id === org.id && (
+                              <div className="shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 flex items-center justify-center border border-cyan-500/50">
+                                <div className="i-ph:check text-cyan-400" />
+                              </div>
+                            )}
+                          </motion.div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="text-white/50 mb-2">No organizations found</div>
+                          <p className="text-sm text-white/30">Create a new organization to get started</p>
+                        </div>
+                      )}
 
-                        if (rect) {
-                          const isOverProjects =
-                            e.clientX >= rect.left &&
-                            e.clientX <= rect.right &&
-                            e.clientY >= rect.top &&
-                            e.clientY <= rect.bottom;
-
-                          if (!isOverProjects) {
-                            setShowProjectsPopover(false);
-                          }
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        onClick={() =>
+                          window.open(
+                            'https://supabase.com/dashboard/new/organization',
+                            '_blank',
+                            'noopener,noreferrer',
+                          )
                         }
-                      }}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <span className="text-lg text-white group-hover:text-cyan-300 transition-colors truncate block">
-                          {Cookies.get('supabaseOrgName') || 'Select Organization'}
-                        </span>
-                        <span className="text-xs text-white/50 group-hover:text-white/70 transition-colors">
-                          {Cookies.get('supabaseOrgId')
-                            ? `ID: ${Cookies.get('supabaseOrgId')}`
-                            : 'No organization selected'}
-                        </span>
-                      </div>
-                      <div className="shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 flex items-center justify-center border border-white/10">
-                        <span className="text-white/70 group-hover:text-cyan-300 transition-colors">›</span>
-                      </div>
-                    </motion.div>
-
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      onClick={() =>
-                        window.open('https://supabase.com/dashboard/new/organization', '_blank', 'noopener,noreferrer')
-                      }
-                      className="w-full py-3 px-4 text-center text-white/70 hover:text-white transition-colors rounded-xl bg-gradient-to-r from-white/5 to-transparent hover:from-white/10 hover:to-white/5 border border-white/10 flex items-center justify-center gap-2 group"
-                    >
-                      <div className="i-ph:plus-circle text-lg group-hover:text-cyan-300 transition-colors" />
-                      Create New Organization
-                    </motion.button>
+                        className="w-full py-3 px-4 text-center text-white/70 hover:text-white transition-colors rounded-xl bg-gradient-to-r from-white/5 to-transparent hover:from-white/10 hover:to-white/5 border border-white/10 flex items-center justify-center gap-2 group"
+                      >
+                        <div className="i-ph:plus-circle text-lg group-hover:text-cyan-300 transition-colors" />
+                        Create New Organization
+                      </motion.button>
+                    </div>
                   </>
                 )}
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         )}
 
@@ -733,6 +835,8 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
             </div>
           </motion.div>
         )}
+
+        <SettingsWindow open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} initialTab={settingsTab} />
       </motion.div>
     )
   );

@@ -15,18 +15,19 @@ import DataTab from './data/DataTab';
 interface SettingsProps {
   open: boolean;
   onClose: () => void;
+  initialTab?: TabType;
 }
 
 type TabType = 'data' | 'providers' | 'features' | 'debug' | 'event-logs' | 'connection';
 
-export const SettingsWindow = ({ open, onClose }: SettingsProps) => {
+export const SettingsWindow = ({ open, onClose, initialTab = 'data' }: SettingsProps) => {
   const { debug, eventLogs } = useSettings();
-  const [activeTab, setActiveTab] = useState<TabType>('data');
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
 
   const tabs: { id: TabType; label: string; icon: string; component?: ReactElement }[] = [
     { id: 'data', label: 'Data', icon: 'i-ph:database', component: <DataTab /> },
     { id: 'providers', label: 'Providers', icon: 'i-ph:key', component: <ProvidersTab /> },
-    { id: 'connection', label: 'Connection', icon: 'i-ph:link', component: <ConnectionsTab /> },
+    { id: 'connection', label: 'Extensions', icon: 'i-ph:link', component: <ConnectionsTab /> },
     { id: 'features', label: 'Features', icon: 'i-ph:star', component: <FeaturesTab /> },
     ...(debug
       ? [
