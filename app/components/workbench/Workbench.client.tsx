@@ -20,6 +20,8 @@ import useViewport from '~/lib/hooks';
 import Cookies from 'js-cookie';
 import { SiSupabase } from 'react-icons/si';
 import { SettingsWindow } from '~/components/settings/SettingsWindow';
+import { Modal } from '~/components/ui/Modal';
+import { type TabType } from '~/components/settings/SettingsWindow';
 
 interface WorkspaceProps {
   chatStarted?: boolean;
@@ -83,9 +85,11 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
   const [showAccessTokenInput, setShowAccessTokenInput] = useState(false);
   const [showExtensionsPopover, setShowExtensionsPopover] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<
-    'data' | 'providers' | 'features' | 'debug' | 'event-logs' | 'connection'
-  >('connection');
+  const [settingsTab, setSettingsTab] = useState<TabType>('connection');
+  const [showRepoNameModal, setShowRepoNameModal] = useState(false);
+  const [repoNameError, setRepoNameError] = useState(false);
+  const [showGitHubCredentialsModal, setShowGitHubCredentialsModal] = useState(false);
+  const [githubCredentialsError, setGithubCredentialsError] = useState(false);
 
   const supabaseButtonRef = useRef<HTMLDivElement>(null);
   const orgButtonRef = useRef<HTMLDivElement>(null);
@@ -435,11 +439,26 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
                                 <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 backdrop-blur-sm border border-white/5">
                                   <div className="i-ph:puzzle-piece text-2xl text-white" />
                                 </div>
-                                <div>
-                                  <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-                                    Extensions
-                                  </h2>
-                                  <p className="text-xs text-white/50">Add functionality to your workspace</p>
+                                <div className="flex flex-col">
+                                  <div className="flex items-center gap-2">
+                                    <h2 className="text-xl font-bold bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+                                      Extensions
+                                    </h2>
+                                    <span className="px-1.5 py-0.5 text-[10px] bg-white rounded-full">Beta</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <div className="i-ph:cube text-cyan-400 group-hover:text-cyan-300" />
+                                    <p
+                                      className="text-xs text-white/50 hover:text-white/70 transition-colors cursor-pointer"
+                                      onClick={() => {
+                                        setShowExtensionsPopover(false);
+                                        setSettingsTab('connection');
+                                        setIsSettingsOpen(true);
+                                      }}
+                                    >
+                                      Add functionality to your workspace
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                               <button
@@ -455,81 +474,12 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
                                 className="w-full text-sm bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 hover:from-cyan-500/30 hover:via-violet-500/30 hover:to-fuchsia-500/30 border border-white/10 transition-colors"
                                 onClick={() => {
                                   setShowExtensionsPopover(false);
-                                  setShowSupabasePopover(!showSupabasePopover);
-                                }}
-                              >
-                                <SiSupabase className="text-cyan-400 group-hover:text-cyan-300" />
-                                <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-                                  Supabase
-                                </span>
-                                <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-white/10 rounded-full">Beta</span>
-                              </PanelHeaderButton>
-
-                              <PanelHeaderButton
-                                className="w-full text-sm bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 hover:from-cyan-500/30 hover:via-violet-500/30 hover:to-fuchsia-500/30 border border-white/10 transition-colors"
-                                onClick={() => {
-                                  setShowExtensionsPopover(false);
-
-                                  /* TODO: Implement publish */
-                                }}
-                              >
-                                <div className="i-ph:rocket-launch text-lg text-cyan-400 group-hover:text-cyan-300" />
-                                <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-                                  Publish
-                                </span>
-                                <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-white/10 rounded-full">Beta</span>
-                              </PanelHeaderButton>
-
-                              <PanelHeaderButton
-                                className="w-full text-sm bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 hover:from-cyan-500/30 hover:via-violet-500/30 hover:to-fuchsia-500/30 border border-white/10 transition-colors"
-                                onClick={() => {
-                                  setShowExtensionsPopover(false);
-
-                                  const repoName = prompt(
-                                    'Please enter a name for your new GitHub repository:',
-                                    'bolt-generated-project',
-                                  );
-
-                                  if (!repoName) {
-                                    alert('Repository name is required. Push to GitHub cancelled.');
-                                    return;
-                                  }
-
-                                  const githubUsername = Cookies.get('githubUsername');
-                                  const githubToken = Cookies.get('githubToken');
-
-                                  if (!githubUsername || !githubToken) {
-                                    const usernameInput = prompt('Please enter your GitHub username:');
-                                    const tokenInput = prompt('Please enter your GitHub personal access token:');
-
-                                    if (!usernameInput || !tokenInput) {
-                                      alert('GitHub username and token are required. Push to GitHub cancelled.');
-                                      return;
-                                    }
-
-                                    workbenchStore.pushToGitHub(repoName, usernameInput, tokenInput);
-                                  } else {
-                                    workbenchStore.pushToGitHub(repoName, githubUsername, githubToken);
-                                  }
+                                  setShowRepoNameModal(true);
                                 }}
                               >
                                 <div className="i-ph:github-logo" />
                                 <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
                                   Push to GitHub
-                                </span>
-                              </PanelHeaderButton>
-
-                              <PanelHeaderButton
-                                className="w-full text-sm bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-fuchsia-500/20 hover:from-cyan-500/30 hover:via-violet-500/30 hover:to-fuchsia-500/30 border border-white/10 transition-colors"
-                                onClick={() => {
-                                  setShowExtensionsPopover(false);
-                                  setSettingsTab('connection');
-                                  setIsSettingsOpen(true);
-                                }}
-                              >
-                                <div className="i-ph:plus-circle text-cyan-400 group-hover:text-cyan-300" />
-                                <span className="bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
-                                  Add More...
                                 </span>
                               </PanelHeaderButton>
                             </div>
@@ -835,6 +785,128 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
             </div>
           </motion.div>
         )}
+
+        <Modal
+          isOpen={showRepoNameModal}
+          onClose={() => {
+            setShowRepoNameModal(false);
+            setRepoNameError(false);
+          }}
+          title="Push to GitHub"
+          message={
+            repoNameError
+              ? 'Repository name is required to push your code to GitHub.'
+              : 'Please enter a name for your new GitHub repository:'
+          }
+          confirmLabel="Continue"
+          cancelLabel="Cancel"
+          onConfirm={() => {
+            const repoName = (document.getElementById('repo-name-input') as HTMLInputElement)?.value;
+
+            if (!repoName) {
+              setRepoNameError(true);
+              return;
+            }
+
+            const githubUsername = Cookies.get('githubUsername');
+            const githubToken = Cookies.get('githubToken');
+
+            if (!githubUsername || !githubToken) {
+              setShowGitHubCredentialsModal(true);
+              return;
+            }
+
+            workbenchStore.pushToGitHub(repoName, githubUsername, githubToken);
+            setShowRepoNameModal(false);
+            setRepoNameError(false);
+          }}
+        >
+          <div className="mt-4">
+            <input
+              id="repo-name-input"
+              type="text"
+              placeholder="repository-name"
+              defaultValue="Val-X-generated-project"
+              className={classNames(
+                'w-full px-4 py-2 text-sm text-white bg-white/5 rounded-lg border focus:outline-none focus:ring-2 transition-colors',
+                repoNameError
+                  ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20'
+                  : 'border-white/10 focus:border-cyan-500 focus:ring-cyan-500/20',
+              )}
+            />
+            {repoNameError && <p className="mt-2 text-xs text-red-400">Please enter a repository name</p>}
+          </div>
+        </Modal>
+
+        <Modal
+          isOpen={showGitHubCredentialsModal}
+          onClose={() => {
+            setShowGitHubCredentialsModal(false);
+            setGithubCredentialsError(false);
+          }}
+          title="GitHub Credentials"
+          message="Please enter your GitHub credentials to push your code:"
+          confirmLabel="Push to GitHub"
+          cancelLabel="Cancel"
+          onConfirm={() => {
+            const username = (document.getElementById('github-username-input') as HTMLInputElement)?.value;
+            const token = (document.getElementById('github-token-input') as HTMLInputElement)?.value;
+            const repoName = (document.getElementById('repo-name-input') as HTMLInputElement)?.value;
+
+            if (!username || !token) {
+              setGithubCredentialsError(true);
+              return;
+            }
+
+            workbenchStore.pushToGitHub(repoName!, username, token);
+            setShowGitHubCredentialsModal(false);
+            setShowRepoNameModal(false);
+            setGithubCredentialsError(false);
+          }}
+        >
+          <div className="space-y-4">
+            <div>
+              <input
+                id="github-username-input"
+                type="text"
+                placeholder="GitHub Username"
+                className={classNames(
+                  'w-full px-4 py-2 text-sm text-white bg-white/5 rounded-lg border focus:outline-none focus:ring-2 transition-colors',
+                  githubCredentialsError
+                    ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20'
+                    : 'border-white/10 focus:border-cyan-500 focus:ring-cyan-500/20',
+                )}
+              />
+            </div>
+            <div>
+              <input
+                id="github-token-input"
+                type="password"
+                placeholder="Personal Access Token"
+                className={classNames(
+                  'w-full px-4 py-2 text-sm text-white bg-white/5 rounded-lg border focus:outline-none focus:ring-2 transition-colors',
+                  githubCredentialsError
+                    ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20'
+                    : 'border-white/10 focus:border-cyan-500 focus:ring-cyan-500/20',
+                )}
+              />
+            </div>
+            {githubCredentialsError && (
+              <p className="text-xs text-red-400">Please enter both GitHub username and personal access token</p>
+            )}
+            <p className="text-xs text-white/50">
+              Need a token?{' '}
+              <a
+                href="https://github.com/settings/tokens/new"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cyan-400 hover:text-cyan-300 transition-colors"
+              >
+                Create one here
+              </a>
+            </p>
+          </div>
+        </Modal>
 
         <SettingsWindow open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} initialTab={settingsTab} />
       </motion.div>

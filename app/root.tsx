@@ -1,5 +1,5 @@
 import { useStore } from '@nanostores/react';
-import type { LinksFunction, LoaderFunction } from '@remix-run/cloudflare';
+import type { LinksFunction } from '@remix-run/cloudflare';
 import { json } from '@remix-run/cloudflare';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from '@remix-run/react';
 import tailwindReset from '@unocss/reset/tailwind-compat.css?url';
@@ -7,13 +7,13 @@ import { themeStore } from './lib/stores/theme';
 import { stripIndents } from './utils/stripIndent';
 import { createHead } from 'remix-island';
 import { useEffect } from 'react';
-import type { SupabaseEnv } from './config/supabase';
 
 import reactToastifyStyles from 'react-toastify/dist/ReactToastify.css?url';
 import globalStyles from './styles/index.scss?url';
 import xtermStyles from '@xterm/xterm/css/xterm.css?url';
 
 import 'virtual:uno.css';
+import { getEnvConfig, validateEnv } from './env.server';
 
 export const links: LinksFunction = () => [
   {
@@ -64,28 +64,16 @@ export const Head = createHead(() => (
   </>
 ));
 
-export const loader: LoaderFunction = async ({ context }) => {
-  const env = {
-    SUPABASE_CLIENT_ID: context.SUPABASE_CLIENT_ID || '',
-    SUPABASE_CLIENT_SECRET: context.SUPABASE_CLIENT_SECRET || '',
-  };
-
-  const isSupabaseConfigured = Boolean(env.SUPABASE_CLIENT_ID && env.SUPABASE_CLIENT_SECRET);
-
-  if (!isSupabaseConfigured) {
-    console.error('Missing required Supabase environment variables');
-  }
+export async function loader() {
+  validateEnv();
 
   return json({
-    ENV: {
-      env,
-      isSupabaseConfigured,
-    },
+    ENV: getEnvConfig(),
   });
-};
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { ENV } = useLoaderData<{ ENV: { env: SupabaseEnv; isSupabaseConfigured: boolean } }>();
+  const { ENV } = useLoaderData<typeof loader>();
   const theme = useStore(themeStore);
 
   useEffect(() => {
@@ -96,10 +84,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <>
       <Head />
       <body>
-        {/* Inject environment variables */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.ENV = ${JSON.stringify(ENV)};`,
+            __html: `window.ENV = ${JSON.stringify(ENV)}`,
           }}
         />
         {children}

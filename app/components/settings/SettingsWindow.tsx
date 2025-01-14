@@ -18,7 +18,7 @@ interface SettingsProps {
   initialTab?: TabType;
 }
 
-type TabType = 'data' | 'providers' | 'features' | 'debug' | 'event-logs' | 'connection';
+export type TabType = 'data' | 'providers' | 'features' | 'debug' | 'event-logs' | 'connection';
 
 export const SettingsWindow = ({ open, onClose, initialTab = 'data' }: SettingsProps) => {
   const { debug, eventLogs } = useSettings();

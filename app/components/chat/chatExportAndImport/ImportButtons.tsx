@@ -7,11 +7,6 @@ type ChatData = {
   description?: string; // Optional description
 };
 
-type ChatData = {
-  messages?: Message[]; // Standard Bolt format
-  description?: string; // Optional description
-};
-
 export function ImportButtons(importChat: ((description: string, messages: Message[]) => Promise<void>) | undefined) {
   return (
     <div className="flex flex-col items-center justify-center w-auto">
@@ -30,7 +25,6 @@ export function ImportButtons(importChat: ((description: string, messages: Messa
               reader.onload = async (e) => {
                 try {
                   const content = e.target?.result as string;
-                  const data = JSON.parse(content) as ChatData;
                   const data = JSON.parse(content) as ChatData;
 
                   // Standard format

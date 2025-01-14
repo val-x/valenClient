@@ -9,7 +9,7 @@ export const supabaseConfig = {
   apiUrl: 'https://api.supabase.com',
   getClientConfig: () => {
     // Check if we're in the browser
-    if (typeof window !== 'undefined' && window.ENV) {
+    if (typeof window !== 'undefined' && window.ENV?.env) {
       return {
         clientId: window.ENV.env.SUPABASE_CLIENT_ID,
         clientSecret: window.ENV.env.SUPABASE_CLIENT_SECRET,
