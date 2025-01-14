@@ -329,14 +329,12 @@ export default function McpServersTab() {
       }
 
       if (!isSupabaseConfigured) {
-        toast.error(
+        toast.info(
           <div className="flex flex-col gap-2">
-            <p>Supabase is not properly configured. Please check:</p>
-            <ul className="list-disc ml-4 text-sm">
-              <li>SUPABASE_CLIENT_ID is set</li>
-              <li>SUPABASE_CLIENT_SECRET is set</li>
-              <li>Environment variables are loaded correctly</li>
-            </ul>
+            <p>Supabase integration is not enabled.</p>
+            <p className="text-sm text-white/70">
+              The application will work without Supabase, but some features may be limited.
+            </p>
           </div>,
           { autoClose: 8000 },
         );

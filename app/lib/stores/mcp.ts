@@ -30,8 +30,6 @@ const supabaseMCP: MCPServerConfig = {
 // Load saved MCP configurations from cookies
 export function initMCPServers() {
   const savedConfigs = Cookies.get('mcpServers');
-  const supabaseAccessToken = Cookies.get('supabaseAccessToken');
-  const supabaseOrgId = Cookies.get('supabaseOrgId');
 
   if (savedConfigs) {
     try {
@@ -39,22 +37,32 @@ export function initMCPServers() {
       mcpServersStore.set(configs);
     } catch (error) {
       console.error('Error loading MCP configurations:', error);
-      mcpServersStore.set({ [supabaseMCP.id]: supabaseMCP });
+      mcpServersStore.set({});
     }
   } else {
-    // Initialize with default Supabase MCP
-    mcpServersStore.set({ [supabaseMCP.id]: supabaseMCP });
+    // Initialize with empty config
+    mcpServersStore.set({});
   }
 
-  // If Supabase credentials exist, try to reconnect
-  if (supabaseAccessToken && supabaseOrgId) {
-    const config = mcpServersStore.get()[supabaseMCP.id];
+  // Only initialize Supabase if we have credentials
+  const supabaseAccessToken = Cookies.get('supabaseAccessToken');
+  const supabaseOrgId = Cookies.get('supabaseOrgId');
+  const { env } = (window as Window).ENV || {};
+  const isSupabaseConfigured = Boolean(env?.SUPABASE_CLIENT_ID && env?.SUPABASE_CLIENT_SECRET);
 
-    if (config && !config.isConnected) {
-      connectMCPServer(supabaseMCP.id, {
-        accessToken: supabaseAccessToken,
-        orgId: supabaseOrgId,
-      });
+  if (isSupabaseConfigured) {
+    mcpServersStore.setKey(supabaseMCP.id, supabaseMCP);
+
+    // If Supabase credentials exist, try to reconnect
+    if (supabaseAccessToken && supabaseOrgId) {
+      const config = mcpServersStore.get()[supabaseMCP.id];
+
+      if (config && !config.isConnected) {
+        connectMCPServer(supabaseMCP.id, {
+          accessToken: supabaseAccessToken,
+          orgId: supabaseOrgId,
+        });
+      }
     }
   }
 }
