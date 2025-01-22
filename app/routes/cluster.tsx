@@ -26,14 +26,17 @@
  * partitioning where each device runs model layers proportional to its memory capacity.
  */
 
+// Add cSpell words to dictionary at the top of the file
+/* cSpell:words tinygrad Qwen Deepseek tflops cuda cudnn GEFORCE nvcc CUDA TFLOPS */
+
 // Third-party imports first
 import { json } from '@remix-run/cloudflare';
 import { useLoaderData } from '@remix-run/react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 
 // Local imports after a blank line
-import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
+import { Dialog, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { Header } from '~/components/header/Header';
 
 declare global {
@@ -198,14 +201,12 @@ const generateCurvePath = (start: { x: number; y: number }, end: { x: number; y:
 
 // Add this function at the top level
 const calculateClusterUtilization = (nodes: ClusterNode[]) => {
-  const totalUtilization = nodes.reduce((acc, node) => acc + node.gpu.utilization[1], 0);
+  const totalUtilization = nodes.reduce((acc, _node) => acc + _node.gpu.utilization[1], 0);
   return (totalUtilization / nodes.length) * 100;
 };
 
 export default function Cluster() {
   const { clusterInfo } = useLoaderData<typeof loader>();
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [showConfigModal, setShowConfigModal] = useState(false);
 
   // Add new state for node interactions
@@ -215,7 +216,7 @@ export default function Cluster() {
   const centerPosition = { x: 50, y: 50 }; // percentage
 
   // Add animation state for the central hub
-  const [isHubPulsing, setIsHubPulsing] = useState(true);
+  const [isHubPulsing] = useState(true);
 
   // Calculate current cluster utilization
   const currentUtilization = calculateClusterUtilization(clusterInfo.nodes);
@@ -227,19 +228,15 @@ export default function Cluster() {
 
     return Array.from({ length: nodeCount }).map((_, index) => {
       const angle = (index * 2 * Math.PI) / nodeCount + angleOffset;
+
       // Add slight random variation to positions for more organic look
       const radiusVariation = radius + (Math.random() - 0.5) * 3;
+
       return {
         x: centerPosition.x + radiusVariation * Math.cos(angle),
         y: centerPosition.y + radiusVariation * Math.sin(angle),
       };
     });
-  };
-
-  const getUtilizationColor = (value: number) => {
-    if (value < 0.3) return 'from-red-500 to-red-600';
-    if (value < 0.6) return 'from-yellow-500 to-yellow-600';
-    return 'from-emerald-500 to-emerald-600';
   };
 
   // Add connection generation with better patterns
@@ -291,7 +288,7 @@ export default function Cluster() {
   const [selectedNodeDetails, setSelectedNodeDetails] = useState<(ClusterNode & { details: NodeDetails }) | null>(null);
 
   // Add function to get node details (mock data for now)
-  const getNodeDetails = (node: ClusterNode): NodeDetails => ({
+  const getNodeDetails = () => ({
     cpuUsage: 45 + Math.random() * 30,
     memoryTotal: 32,
     memoryUsed: 16 + Math.random() * 8,
@@ -313,17 +310,13 @@ export default function Cluster() {
     { name: 'Repository Clone', status: 'pending' },
   ]);
 
-  // Add function to run system checks
-  const runSystemChecks = async () => {
-    // Update Python check
-    setSystemChecks((prev) =>
-      prev.map((check) => (check.name === 'Python Version' ? { ...check, status: 'running' } : check)),
-    );
+  console.log('🚀 ~ Cluster ~ systemChecks:', systemChecks);
 
+  // Add function to verify installations
+  const verifyInstallations = async () => {
     try {
       const pythonVersion = await window.electron.invoke('shell:execute', 'python3 --version');
       const version = pythonVersion.match(/\d+\.\d+\.\d+/)?.[0] || '0.0.0';
-
       setSystemChecks((prev) =>
         prev.map((check) =>
           check.name === 'Python Version'
@@ -338,78 +331,31 @@ export default function Cluster() {
             : check,
         ),
       );
-    } catch (error) {
-      setSystemChecks((prev) =>
-        prev.map((check) =>
-          check.name === 'Python Version' ? { ...check, status: 'error', message: 'Python not found' } : check,
-        ),
-      );
-    }
 
-    // Check NVIDIA components on Linux
-    if ((await window.electron.invoke('os:platform')) === 'linux') {
-      // Check NVIDIA Driver
-      try {
-        await window.electron.invoke('shell:execute', 'nvidia-smi');
-        setSystemChecks((prev) =>
-          prev.map((check) =>
-            check.name === 'NVIDIA Driver' ? { ...check, status: 'success', message: 'NVIDIA driver detected' } : check,
-          ),
-        );
-      } catch {
-        setSystemChecks((prev) =>
-          prev.map((check) =>
-            check.name === 'NVIDIA Driver' ? { ...check, status: 'error', message: 'NVIDIA driver not found' } : check,
-          ),
-        );
+      // Check NVIDIA components on Linux
+      if (osType === 'linux') {
+        try {
+          await window.electron.invoke('shell:execute', 'nvidia-smi');
+          setSetupStatus((prev) => ({ ...prev, nvidiaDriverInstalled: true }));
+        } catch {
+          setSetupStatus((prev) => ({ ...prev, nvidiaDriverInstalled: false }));
+        }
+
+        try {
+          await window.electron.invoke('shell:execute', 'nvcc --version');
+          setSetupStatus((prev) => ({ ...prev, cudaInstalled: true }));
+        } catch {
+          setSetupStatus((prev) => ({ ...prev, cudaInstalled: false }));
+        }
       }
 
-      // Check CUDA
-      try {
-        const cudaVersion = await window.electron.invoke('shell:execute', 'nvcc --version');
-        setSystemChecks((prev) =>
-          prev.map((check) =>
-            check.name === 'CUDA Toolkit' ? { ...check, status: 'success', message: 'CUDA toolkit detected' } : check,
-          ),
-        );
-      } catch {
-        setSystemChecks((prev) =>
-          prev.map((check) =>
-            check.name === 'CUDA Toolkit' ? { ...check, status: 'error', message: 'CUDA toolkit not found' } : check,
-          ),
-        );
-      }
-    }
-
-    // Clone repository
-    try {
+      // Check repository
       const homeDir = await window.electron.invoke('os:homedir');
       const repoPath = `${homeDir}/.val-x/exo`;
-
-      await window.electron.invoke(
-        'shell:execute',
-        `
-        mkdir -p ${repoPath} &&
-        cd ${repoPath} &&
-        git clone https://github.com/exo-explore/exo.git . || git pull
-      `,
-      );
-
-      setSystemChecks((prev) =>
-        prev.map((check) =>
-          check.name === 'Repository Clone'
-            ? { ...check, status: 'success', message: 'Repository cloned successfully' }
-            : check,
-        ),
-      );
-    } catch (error) {
-      setSystemChecks((prev) =>
-        prev.map((check) =>
-          check.name === 'Repository Clone'
-            ? { ...check, status: 'error', message: 'Failed to clone repository' }
-            : check,
-        ),
-      );
+      await window.electron.invoke('shell:execute', `test -d ${repoPath}/.git`);
+      setSetupStatus((prev) => ({ ...prev, repoCloned: true }));
+    } catch {
+      setSetupStatus((prev) => ({ ...prev, repoCloned: false }));
     }
   };
 
@@ -452,7 +398,10 @@ export default function Cluster() {
   // Add function to handle command submission
   const handleCommandSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commandInput.trim()) return;
+
+    if (!commandInput.trim()) {
+      return;
+    }
 
     await executeCommand(commandInput);
     setCommandInput('');
@@ -467,8 +416,8 @@ export default function Cluster() {
     try {
       const platform = await window.electron.invoke('os:platform');
       setOsType(platform === 'win32' ? 'windows' : platform === 'linux' ? 'linux' : 'unknown');
-    } catch (error) {
-      console.error('Failed to detect OS:', error);
+    } catch (_error) {
+      console.error('Failed to detect OS:', _error);
     }
   };
 
@@ -486,6 +435,7 @@ export default function Cluster() {
   const checkAdminStatus = async () => {
     try {
       const isAdmin = await window.electron.invoke('os:isAdmin');
+
       if (!isAdmin) {
         setTerminalLines((prev) => [
           ...prev,
@@ -497,13 +447,15 @@ export default function Cluster() {
         ]);
         return false;
       }
+
       setTerminalLines((prev) => [
         ...prev,
         { content: 'Running with administrator privileges', type: 'output', timestamp: Date.now() },
       ]);
+
       return true;
-    } catch (error) {
-      console.error('Failed to check admin status:', error);
+    } catch (_error) {
+      console.error('Failed to check admin status:', _error);
       return false;
     }
   };
@@ -519,6 +471,7 @@ export default function Cluster() {
 
       // First check if we're already admin
       const isAdmin = await checkAdminStatus();
+
       if (isAdmin) {
         setSetupStatus((prev) => ({ ...prev, hasTerminalAccess: true }));
         return true;
@@ -533,11 +486,11 @@ export default function Cluster() {
       ]);
 
       return true;
-    } catch (error) {
+    } catch (_error) {
       setTerminalLines((prev) => [
         ...prev,
         {
-          content: `Error: ${error instanceof Error ? error.message : 'Failed to request elevated privileges'}`,
+          content: `Error: ${_error instanceof Error ? _error.message : 'Failed to request elevated privileges'}`,
           type: 'error',
           timestamp: Date.now(),
         },
@@ -555,6 +508,7 @@ export default function Cluster() {
 
       // First check terminal access
       const isAdmin = await checkAdminStatus();
+
       if (!isAdmin) {
         setTerminalLines((prev) => [
           ...prev,
@@ -605,48 +559,9 @@ export default function Cluster() {
     }
   };
 
-  // Add back the verifyInstallations function
-  const verifyInstallations = async () => {
-    // Check Python
-    try {
-      const pythonVersion = await window.electron.invoke('shell:execute', 'python3 --version');
-      const version = pythonVersion.match(/\d+\.\d+\.\d+/)?.[0] || '0.0.0';
-      setSetupStatus((prev) => ({ ...prev, pythonInstalled: version >= '3.12.0' }));
-    } catch {
-      setSetupStatus((prev) => ({ ...prev, pythonInstalled: false }));
-    }
-
-    // Check NVIDIA components on Linux
-    if (osType === 'linux') {
-      try {
-        await window.electron.invoke('shell:execute', 'nvidia-smi');
-        setSetupStatus((prev) => ({ ...prev, nvidiaDriverInstalled: true }));
-      } catch {
-        setSetupStatus((prev) => ({ ...prev, nvidiaDriverInstalled: false }));
-      }
-
-      try {
-        await window.electron.invoke('shell:execute', 'nvcc --version');
-        setSetupStatus((prev) => ({ ...prev, cudaInstalled: true }));
-      } catch {
-        setSetupStatus((prev) => ({ ...prev, cudaInstalled: false }));
-      }
-    }
-
-    // Check repository
-    try {
-      const homeDir = await window.electron.invoke('os:homedir');
-      const repoPath = `${homeDir}/.val-x/exo`;
-      await window.electron.invoke('shell:execute', `test -d ${repoPath}/.git`);
-      setSetupStatus((prev) => ({ ...prev, repoCloned: true }));
-    } catch {
-      setSetupStatus((prev) => ({ ...prev, repoCloned: false }));
-    }
-  };
-
   // Update the initial checks
   useEffect(() => {
-    if (showConfigModal && setupStep === 'init') {
+    if (setupStep === 'init') {
       detectOS();
       checkAdminStatus().then((isAdmin) => {
         if (isAdmin) {
@@ -654,7 +569,17 @@ export default function Cluster() {
         }
       });
     }
-  }, [showConfigModal, setupStep]);
+  }, [setupStep]);
+
+  // Add curly braces for if condition
+  const handleNodeClick = (node: ClusterNode) => {
+    if (node.status === 'active') {
+      setSelectedNodeDetails({
+        ...node,
+        details: getNodeDetails(),
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black">
@@ -944,10 +869,7 @@ export default function Cluster() {
                   style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
                   onMouseEnter={() => setHoveredNode(node.id)}
                   onMouseLeave={() => setHoveredNode(null)}
-                  onClick={() => {
-                    const details = getNodeDetails(node);
-                    setSelectedNodeDetails({ ...node, details });
-                  }}
+                  onClick={() => handleNodeClick(node)}
                 >
                   <motion.div
                     whileHover={{ scale: 1.05 }}
@@ -1033,7 +955,6 @@ export default function Cluster() {
           <DialogDescription className="relative">
             <div className="space-y-6">
               {setupStep === 'init' ? (
-                // Initial Setup Screen
                 <div className="space-y-6">
                   <div className="text-center space-y-2">
                     <div className="text-xl font-bold text-white">Welcome to Val-X Setup</div>
@@ -1078,7 +999,6 @@ export default function Cluster() {
                   </div>
                 </div>
               ) : setupStep === 'prerequisites' ? (
-                // Prerequisites Installation Screen
                 <div className="space-y-6">
                   <div className="text-center space-y-2">
                     <div className="text-xl font-bold text-white">Installing Prerequisites</div>
@@ -1128,7 +1048,6 @@ export default function Cluster() {
                   </div>
                 </div>
               ) : (
-                // Terminal Access Screen (your existing terminal UI)
                 <>
                   {/* Terminal Section */}
                   <div className="space-y-3">

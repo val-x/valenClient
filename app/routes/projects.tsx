@@ -33,6 +33,7 @@ export default function Projects() {
 
   const handleChatSelect = (chatId: string) => {
     // TODO: Load chat into chatStore
+    console.log('chatId', chatId);
     chatStore.setKey('started', true);
   };
 

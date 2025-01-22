@@ -1,6 +1,6 @@
 import { useStore } from '@nanostores/react';
 import type { LinksFunction } from '@remix-run/cloudflare';
-import { json, type LoaderFunctionArgs } from '@remix-run/cloudflare';
+import { json } from '@remix-run/cloudflare';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from '@remix-run/react';
 import tailwindReset from '@unocss/reset/tailwind-compat.css?url';
 import { themeStore } from './lib/stores/theme';
@@ -70,6 +70,7 @@ export async function loader() {
   return json({
     ENV: {
       NODE_ENV: process.env.NODE_ENV || 'development',
+
       // Add other environment variables here
     },
   });
@@ -106,7 +107,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 import { logStore } from './lib/stores/logs';
 
 export default function App() {
-  const data = useLoaderData<typeof loader>();
+  // const data = useLoaderData<typeof loader>();
   const theme = useStore(themeStore);
 
   useEffect(() => {
