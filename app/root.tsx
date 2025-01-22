@@ -1,6 +1,6 @@
 import { useStore } from '@nanostores/react';
 import type { LinksFunction } from '@remix-run/cloudflare';
-import { json } from '@remix-run/cloudflare';
+import { json, type LoaderFunctionArgs } from '@remix-run/cloudflare';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from '@remix-run/react';
 import tailwindReset from '@unocss/reset/tailwind-compat.css?url';
 import { themeStore } from './lib/stores/theme';
@@ -13,7 +13,7 @@ import globalStyles from './styles/index.scss?url';
 import xtermStyles from '@xterm/xterm/css/xterm.css?url';
 
 import 'virtual:uno.css';
-import { getEnvConfig, validateEnv } from './env.server';
+import { validateEnv } from './env.server';
 
 export const links: LinksFunction = () => [
   {
@@ -68,12 +68,15 @@ export async function loader() {
   validateEnv();
 
   return json({
-    ENV: getEnvConfig(),
+    ENV: {
+      NODE_ENV: process.env.NODE_ENV || 'development',
+      // Add other environment variables here
+    },
   });
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { ENV } = useLoaderData<typeof loader>();
+  const data = useLoaderData<typeof loader>();
   const theme = useStore(themeStore);
 
   useEffect(() => {
@@ -84,11 +87,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <>
       <Head />
       <body>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.ENV = ${JSON.stringify(ENV)}`,
-          }}
-        />
+        {/* Only add the script if data.ENV exists */}
+        {data?.ENV && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.ENV = ${JSON.stringify(data.ENV)}`,
+            }}
+          />
+        )}
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -100,6 +106,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 import { logStore } from './lib/stores/logs';
 
 export default function App() {
+  const data = useLoaderData<typeof loader>();
   const theme = useStore(themeStore);
 
   useEffect(() => {
@@ -109,7 +116,7 @@ export default function App() {
       userAgent: navigator.userAgent,
       timestamp: new Date().toISOString(),
     });
-  }, []);
+  }, [theme]);
 
   return (
     <Layout>

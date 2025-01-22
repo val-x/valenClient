@@ -17,6 +17,25 @@ export function Header() {
     { label: 'Home', path: 'https://www.val-x.in/' },
     { label: 'Templates', path: '/templates' },
     { label: 'Agents', path: '/agents' },
+    {
+      label: 'Projects & Cluster',
+      path: '#',
+      badge: 'Beta',
+      dropdown: [
+        {
+          label: 'Projects',
+          description: 'View chat history and saved projects',
+          icon: 'i-ph:folder-simple-duotone',
+          path: '/projects',
+        },
+        {
+          label: 'Cluster',
+          description: 'Manage your exo cluster network',
+          icon: 'i-ph:cpu-duotone',
+          path: '/cluster',
+        },
+      ],
+    },
     { label: 'Learn', path: 'https://www.val-x.in/learn-with-us' },
   ];
 
@@ -28,6 +47,8 @@ export function Header() {
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   return (
     <motion.header
@@ -63,13 +84,60 @@ export function Header() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
               >
-                <a
-                  href={item.path}
-                  className="relative px-4 py-2 rounded-full text-sm font-medium text-gray-400 transition-all duration-300 hover:text-white group"
-                >
-                  <span className="relative z-10">{item.label}</span>
-                  <div className="absolute inset-0 bg-white/0 rounded-full hover:bg-white/5 transition-colors duration-300" />
-                </a>
+                {item.dropdown ? (
+                  <div className="relative">
+                    <button
+                      className="relative px-4 py-2 rounded-full text-sm font-medium text-gray-400 transition-all duration-300 hover:text-white group flex items-center gap-2"
+                      onMouseEnter={() => setActiveDropdown(item.label)}
+                      onMouseLeave={() => setActiveDropdown(null)}
+                    >
+                      <span className="relative z-10">{item.label}</span>
+                      {item.badge && (
+                        <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-gradient-to-r from-cyan-500 to-violet-500 rounded-full">
+                          {item.badge}
+                        </span>
+                      )}
+                      <div className="i-ph:caret-down text-sm" />
+                      <div className="absolute inset-0 bg-white/0 rounded-full hover:bg-white/5 transition-colors duration-300" />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    <AnimatePresence>
+                      {activeDropdown === item.label && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          className="absolute top-full left-0 mt-2 w-64 bg-black/90 backdrop-blur-xl rounded-xl border border-white/10 overflow-hidden"
+                          onMouseEnter={() => setActiveDropdown(item.label)}
+                          onMouseLeave={() => setActiveDropdown(null)}
+                        >
+                          {item.dropdown.map((dropdownItem) => (
+                            <Link
+                              key={dropdownItem.label}
+                              to={dropdownItem.path}
+                              className="flex items-start gap-3 p-3 hover:bg-white/5 transition-colors"
+                            >
+                              <div className={`${dropdownItem.icon} text-xl text-gradient-primary`} />
+                              <div>
+                                <div className="font-medium text-white">{dropdownItem.label}</div>
+                                <div className="text-sm text-white/60">{dropdownItem.description}</div>
+                              </div>
+                            </Link>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  <a
+                    href={item.path}
+                    className="relative px-4 py-2 rounded-full text-sm font-medium text-gray-400 transition-all duration-300 hover:text-white group"
+                  >
+                    <span className="relative z-10">{item.label}</span>
+                    <div className="absolute inset-0 bg-white/0 rounded-full hover:bg-white/5 transition-colors duration-300" />
+                  </a>
+                )}
               </motion.div>
             ))}
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
