@@ -535,6 +535,7 @@ export const ChatImpl = memo(
         setImageDataList={setImageDataList}
         actionAlert={actionAlert}
         clearAlert={() => workbenchStore.clearAlert()}
+        showWorkbench={workbenchStore.showWorkbench.get()}
       />
     );
   },

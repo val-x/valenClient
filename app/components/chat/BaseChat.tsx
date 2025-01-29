@@ -65,6 +65,7 @@ interface BaseChatProps {
   setImageDataList?: (dataList: string[]) => void;
   actionAlert?: ActionAlert;
   clearAlert?: () => void;
+  showWorkbench?: boolean;
 }
 
 interface ModelSettingsDialogProps {
@@ -96,32 +97,35 @@ const ModelSettingsDialog = ({
 }: ModelSettingsDialogProps) => {
   return (
     <DialogRoot open={open}>
-      <Dialog onClose={onClose} className="bg-gradient-to-br from-[#22D3EE]/10 via-[#A78BFA]/10 to-[#E879F9]/10">
+      <Dialog
+        onClose={onClose}
+        className="bg-gradient-to-br from-[#22D3EE]/10 via-[#A78BFA]/10 to-[#E879F9]/10 w-full max-w-4xl mx-auto"
+      >
         <div className="relative overflow-hidden">
           {/* Background decorative elements */}
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-[#22D3EE]/20 blur-3xl" />
-            <div className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full bg-[#E879F9]/20 blur-3xl" />
+            <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-[#22D3EE]/20 blur-3xl" />
+            <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-[#E879F9]/20 blur-3xl" />
           </div>
 
-          <DialogTitle className="relative border-b border-white/10 bg-black/20 backdrop-blur-sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-r from-[#22D3EE] to-[#A78BFA]">
-                <div className="i-ph:gear-six-duotone text-xl text-white" />
+          <DialogTitle className="relative border-b border-white/10 bg-black/20 backdrop-blur-sm p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-gradient-to-r from-[#22D3EE] to-[#A78BFA]">
+                <div className="i-ph:gear-six-duotone text-2xl text-white" />
               </div>
-              <span>Model Settings</span>
+              <span className="text-xl">Model Settings</span>
             </div>
           </DialogTitle>
 
-          <DialogDescription className="relative">
-            <div className="space-y-6">
+          <DialogDescription className="relative p-6">
+            <div className="space-y-8">
               {/* Provider Section */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-[#22D3EE] flex items-center gap-2">
-                  <div className="i-ph:buildings-duotone" />
+              <div className="space-y-4">
+                <h3 className="text-base font-medium text-[#22D3EE] flex items-center gap-3">
+                  <div className="i-ph:buildings-duotone text-lg" />
                   Provider Selection
                 </h3>
-                <div className="p-4 rounded-lg border border-white/10 bg-black/20 backdrop-blur-sm">
+                <div className="p-6 rounded-lg border border-white/10 bg-black/20 backdrop-blur-sm">
                   <ModelSelector
                     key={provider?.name + ':' + modelList.length}
                     model={model}
@@ -137,13 +141,13 @@ const ModelSettingsDialog = ({
               </div>
 
               {/* API Key Section */}
-              {(providerList || []).length > 0 && provider && (
-                <div className="space-y-3">
-                  <h3 className="text-sm font-medium text-[#E879F9] flex items-center gap-2">
-                    <div className="i-ph:key-duotone" />
+              {(providerList || []).length > 0 && provider && provider.name !== 'Val-X' && (
+                <div className="space-y-4">
+                  <h3 className="text-base font-medium text-[#E879F9] flex items-center gap-3">
+                    <div className="i-ph:key-duotone text-lg" />
                     API Configuration
                   </h3>
-                  <div className="p-4 rounded-lg border border-white/10 bg-black/20 backdrop-blur-sm">
+                  <div className="p-6 rounded-lg border border-white/10 bg-black/20 backdrop-blur-sm">
                     <APIKeyManager
                       provider={provider}
                       apiKey={apiKeys[provider.name] || ''}
@@ -156,14 +160,14 @@ const ModelSettingsDialog = ({
               )}
 
               {/* Footer with provider info */}
-              <div className="mt-6 pt-4 border-t border-white/10">
-                <div className="flex items-center justify-between text-xs text-white/60">
-                  <div className="flex items-center gap-2">
-                    <div className="i-ph:info-duotone" />
+              <div className="mt-8 pt-6 border-t border-white/10">
+                <div className="flex items-center justify-between text-sm text-white/60">
+                  <div className="flex items-center gap-3">
+                    <div className="i-ph:info-duotone text-lg" />
                     <span>Selected Provider: {provider?.name}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="i-ph:cube-duotone" />
+                  <div className="flex items-center gap-3">
+                    <div className="i-ph:cube-duotone text-lg" />
                     <span>Models Available: {modelList.filter((m) => m.provider === provider?.name).length}</span>
                   </div>
                 </div>
@@ -207,6 +211,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       messages,
       actionAlert,
       clearAlert,
+      showWorkbench = true,
     },
     ref,
   ) => {
@@ -218,6 +223,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
     const [transcript, setTranscript] = useState('');
     const [isModelLoading, setIsModelLoading] = useState<string | undefined>('all');
+    const [retryCount, setRetryCount] = useState(0);
+    const [isInitialStart, setIsInitialStart] = useState(true);
+    const [retryTimeout, setRetryTimeout] = useState<NodeJS.Timeout | null>(null);
 
     const getProviderSettings = useCallback(() => {
       let providerSettings: Record<string, IProviderSetting> | undefined = undefined;
@@ -246,36 +254,239 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     }, [transcript]);
 
     useEffect(() => {
-      if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
+      if (typeof window !== 'undefined') {
+        try {
+          // Check for browser support
+          if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
+            console.warn('Speech recognition is not supported in this browser');
+            toast.error('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
 
-        recognition.onresult = (event) => {
-          const transcript = Array.from(event.results)
-            .map((result) => result[0])
-            .map((result) => result.transcript)
-            .join('');
-
-          setTranscript(transcript);
-
-          if (handleInputChange) {
-            const syntheticEvent = {
-              target: { value: transcript },
-            } as React.ChangeEvent<HTMLTextAreaElement>;
-            handleInputChange(syntheticEvent);
+            return;
           }
-        };
 
-        recognition.onerror = (event) => {
-          console.error('Speech recognition error:', event.error);
+          // Initialize speech recognition
+          const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+          const recognition = new SpeechRecognition();
+
+          // Configure recognition with more robust settings
+          recognition.continuous = false;
+          recognition.interimResults = false;
+          recognition.maxAlternatives = 1;
+          recognition.lang = 'en-US';
+
+          // Add additional properties for stability
+          recognition.grammars = new ((window as any).SpeechGrammarList || (window as any).webkitSpeechGrammarList)();
+
+          const MAX_RETRIES = 3;
+          let hasStartedListening = false;
+
+          // Handle results
+          recognition.onresult = (event: any) => {
+            try {
+              const transcript = Array.from(event.results)
+                .map((result: any) => result[0].transcript)
+                .join('');
+
+              console.log('Speech recognition transcript:', transcript);
+              setTranscript(transcript);
+              setRetryCount(0);
+
+              if (handleInputChange && transcript) {
+                const syntheticEvent = {
+                  target: { value: transcript },
+                } as React.ChangeEvent<HTMLTextAreaElement>;
+                handleInputChange(syntheticEvent);
+              }
+            } catch (error) {
+              console.error('Error processing speech result:', error);
+              stopListening();
+            }
+          };
+
+          // Handle start of recognition
+          recognition.onstart = () => {
+            console.log('Speech recognition started');
+            setIsListening(true);
+            hasStartedListening = true;
+
+            if (isInitialStart || retryCount === 0) {
+              toast.success('Listening... Speak now.');
+            }
+          };
+
+          // Handle audio start with better error handling
+          recognition.onaudiostart = () => {
+            console.log('Audio capturing started');
+            setRetryCount(0);
+          };
+
+          // Handle audio end with better state management
+          recognition.onaudioend = () => {
+            console.log('Audio capturing ended');
+
+            if (!hasStartedListening) {
+              console.log('Audio ended before properly starting, attempting restart');
+
+              try {
+                setTimeout(() => {
+                  if (isListening) {
+                    recognition.start();
+                  }
+                }, 100);
+              } catch (error) {
+                console.error('Error restarting after premature audio end:', error);
+                setIsListening(false);
+              }
+            }
+          };
+
+          // Handle end of recognition with better restart logic
+          recognition.onend = () => {
+            console.log('Speech recognition ended');
+
+            if (!hasStartedListening) {
+              console.log('Recognition ended before properly starting, attempting restart');
+
+              try {
+                setTimeout(() => {
+                  if (isListening) {
+                    recognition.start();
+                  }
+                }, 100);
+                return;
+              } catch (error) {
+                console.error('Error restarting after premature end:', error);
+                setIsListening(false);
+              }
+            }
+
+            hasStartedListening = false;
+
+            if (isListening && retryCount < MAX_RETRIES) {
+              try {
+                recognition.start();
+                console.log('Restarting speech recognition');
+              } catch (error) {
+                console.error('Failed to restart recognition:', error);
+                setIsListening(false);
+                toast.error('Failed to restart speech recognition. Please try again.');
+              }
+            }
+          };
+
+          // Handle errors with better state management
+          recognition.onerror = (event: any) => {
+            console.error('Speech recognition error:', event.error);
+            clearRetryTimeout();
+            hasStartedListening = false;
+
+            switch (event.error) {
+              case 'not-allowed':
+                setIsListening(false);
+                toast.error('Microphone access denied. Please allow microphone access and try again.');
+                break;
+
+              case 'no-speech':
+                if (isListening && retryCount < MAX_RETRIES) {
+                  setRetryCount((prev) => prev + 1);
+
+                  const timeout = setTimeout(() => {
+                    try {
+                      recognition.start();
+                      console.log(`Retrying speech recognition after no-speech (attempt ${retryCount + 1})`);
+                    } catch (error) {
+                      console.error('Failed to restart after no-speech:', error);
+                    }
+                  }, 100);
+                  setRetryTimeout(timeout);
+                } else if (retryCount >= MAX_RETRIES) {
+                  setIsListening(false);
+                  toast.error('No speech detected after multiple attempts. Please try again.');
+                }
+
+                break;
+
+              default:
+                setIsListening(false);
+                toast.error('Speech recognition error: ' + event.error);
+            }
+          };
+
+          setRecognition(recognition);
+
+          // eslint-disable-next-line consistent-return
+          return () => {
+            if (recognition) {
+              recognition.abort();
+              setIsListening(false);
+            }
+
+            clearRetryTimeout();
+          };
+        } catch (error) {
+          console.error('Failed to initialize speech recognition:', error);
+          toast.error('Failed to initialize speech recognition. Please try again.');
           setIsListening(false);
-        };
-
-        setRecognition(recognition);
+        }
       }
-    }, []);
+    }, [handleInputChange, isListening]);
+
+    const clearRetryTimeout = useCallback(() => {
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+        setRetryTimeout(null);
+      }
+    }, [retryTimeout]);
+
+    const startListening = useCallback(() => {
+      if (recognition) {
+        try {
+          // Reset any existing recognition
+          recognition.abort();
+
+          // Reset the state
+          setIsInitialStart(true);
+          setRetryCount(0);
+
+          setTimeout(() => {
+            try {
+              recognition.start();
+              console.log('Starting speech recognition');
+            } catch (error) {
+              console.error('Error starting speech recognition:', error);
+              toast.error('Error starting speech recognition. Please try again.');
+              setIsListening(false);
+            }
+          }, 150);
+        } catch (error) {
+          console.error('Error aborting previous recognition:', error);
+          setIsListening(false);
+        }
+      } else {
+        toast.error('Speech recognition not initialized. Please refresh the page.');
+      }
+    }, [recognition]);
+
+    const stopListening = useCallback(() => {
+      if (recognition) {
+        try {
+          recognition.stop();
+          setIsListening(false);
+          console.log('Stopping speech recognition');
+        } catch (error) {
+          console.error('Error stopping speech recognition:', error);
+
+          // Force reset the state
+          setIsListening(false);
+
+          try {
+            recognition.abort();
+          } catch (abortError) {
+            console.error('Error aborting recognition:', abortError);
+          }
+        }
+      }
+    }, [recognition]);
 
     useEffect(() => {
       if (typeof window !== 'undefined') {
@@ -332,20 +543,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           console.error('Error loading dynamic models:', error);
         }
         setIsModelLoading(undefined);
-      }
-    };
-
-    const startListening = () => {
-      if (recognition) {
-        recognition.start();
-        setIsListening(true);
-      }
-    };
-
-    const stopListening = () => {
-      if (recognition) {
-        recognition.stop();
-        setIsListening(false);
       }
     };
 
@@ -429,22 +626,31 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           'relative flex min-h-screen w-full overflow-hidden bg-bolt-elements-background-depth-1',
         )}
         data-chat-visible={showChat}
+        data-workbench-visible={showWorkbench}
       >
         <ClientOnly>{() => <Menu />}</ClientOnly>
-        <div ref={scrollRef} className="flex flex-col lg:flex-row overflow-y-auto w-full h-full">
-          <div className={classNames(styles.Chat, 'flex flex-col flex-grow lg:min-w-[var(--chat-min-width)] h-full')}>
+        <div ref={scrollRef} className="flex flex-col lg:flex-row w-full h-full overflow-hidden">
+          <div
+            className={classNames(
+              styles.Chat,
+              'flex flex-col flex-grow lg:min-w-[var(--chat-min-width)] h-full overflow-auto',
+              {
+                'lg:max-w-[90%] lg:w-[1200px] lg:mx-auto': !showWorkbench,
+              },
+            )}
+          >
             {!chatStarted && (
               <div id="intro" className="mt-[16vh] max-w-chat mx-auto text-center px-4 lg:px-0">
-                <h1 className="text-3xl lg:text-6xl font-bold text-bolt-elements-textPrimary mb-4 animate-fade-in">
-                  Where ideas begin
+                <h1 className="text-3xl lg:text-6xl font-bold text-accent-500 mb-4 animate-fade-in">
+                  Build with Val-X
                 </h1>
                 <p className="text-md lg:text-xl mb-8 text-bolt-elements-textSecondary animate-fade-in animation-delay-200">
-                  Bring ideas to life in seconds or get help on existing projects.
+                  Create, collaborate and build amazing things with Our AI assistance.
                 </p>
               </div>
             )}
             <div
-              className={classNames('pt-6 px-2 sm:px-6', {
+              className={classNames('flex-1 pt-6 px-2 sm:px-6 overflow-auto', {
                 'h-full flex flex-col': chatStarted,
               })}
             >
