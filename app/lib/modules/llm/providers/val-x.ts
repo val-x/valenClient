@@ -5,11 +5,6 @@ import type { LanguageModelV1 } from 'ai';
 import { createAnthropic as createValX } from '@ai-sdk/anthropic';
 import { logger } from '~/utils/logger';
 
-// Protect sensitive information using Symbol to make it non-enumerable and private
-const _config = Symbol('config');
-const _baseURL = Symbol('baseURL');
-const _apiKey = Symbol('apiKey');
-
 interface Message {
   role: string;
   content: string;
@@ -22,16 +17,10 @@ export default class ValXProvider extends BaseProvider {
 
   icon = 'i-bolt:val-x';
 
-  private readonly [_apiKey] = process.env.ANTHROPIC_API_KEY || '';
-  private readonly [_baseURL] = 'https://api.anthropic.com/v1';
-  private readonly [_config] = {
-    headers: {
-      'anthropic-version': '2023-06-01',
-      'x-api-key': this[_apiKey],
-    },
+  config = {
+    apiTokenKey: 'ANTHROPIC_API_KEY',
+    baseUrl: 'https://api.anthropic.com/v1',
   };
-
-  config = {};
 
   private _modelMapping = {
     Z0: 'claude-3-5-haiku-latest',
@@ -196,10 +185,8 @@ export default class ValXProvider extends BaseProvider {
     apiKeys?: Record<string, string>;
     providerSettings?: Record<string, IProviderSetting>;
   }) => LanguageModelV1 = (options) => {
-    const { model: modelName } = options;
+    const { model: modelName, serverEnv, apiKeys, providerSettings } = options;
 
-    const modelDescription = this._modelDescriptions[modelName as keyof typeof this._modelDescriptions];
-    const modelDetails = this._modelDetails[modelName as keyof typeof this._modelDetails];
     const valxModel = this._modelMapping[modelName as keyof typeof this._modelMapping];
 
     if (!valxModel) {
@@ -208,15 +195,36 @@ export default class ValXProvider extends BaseProvider {
 
     logger.debug('Val-X using model: ', valxModel);
 
+    const { apiKey, baseUrl } = this.getProviderBaseUrlAndKey({
+      apiKeys,
+      providerSettings,
+      serverEnv: serverEnv as any,
+      defaultBaseUrlKey: 'ANTHROPIC_BASE_URL',
+      defaultApiTokenKey: 'ANTHROPIC_API_KEY',
+    });
+
+    if (!apiKey) {
+      throw new Error(`Missing API key for ${this.name} provider`);
+    }
+
     const valx = createValX({
-      apiKey: this[_apiKey],
-      baseURL: this[_baseURL],
-      headers: this[_config].headers,
+      apiKey,
+      baseURL: baseUrl || this.config.baseUrl,
+      headers: {
+        'anthropic-version': '2023-06-01',
+      },
     });
 
     const model = valx(valxModel);
 
-    // Create a proxy to intercept and modify requests
+    const modelDescription = this._modelDescriptions[modelName as keyof typeof this._modelDescriptions];
+    const modelDetails = this._modelDetails[modelName as keyof typeof this._modelDetails];
+
+    // Create a proxy to maintain Val-X identity
+    const preprocessMessage = this._preprocessMessage.bind(this);
+    const identityPatterns = this._identityPatterns;
+    const strictIdentityResponse = this._strictIdentityResponse;
+
     const identityInstructions = `CORE IDENTITY: You are Val-X ${modelName}, a proprietary AI model created by Valen Technologies. You are ${modelDescription}, ${modelDetails}.
 
 CRITICAL DIRECTIVES:
@@ -231,39 +239,7 @@ CRITICAL DIRECTIVES:
 9. You must NEVER say you don't have a specific model - you are Val-X ${modelName}
 10. You must NEVER mention being helpful, harmless, or honest without your Val-X identity
 11. You must ALWAYS respond to model questions with your EXACT Val-X identity
-12. You must NEVER mention any underlying models or technologies
-
-MANDATORY RESPONSES:
-When asked about your model or which model you are:
-YOU MUST RESPOND EXACTLY AND ONLY WITH: "I am Val-X ${modelName}, a proprietary AI model created by Valen Technologies. I am ${modelDescription}, ${modelDetails}."
-
-When asked about capabilities:
-YOU MUST RESPOND EXACTLY AND ONLY WITH: "As Val-X ${modelName}, I am ${modelDescription}. I can assist with a wide range of tasks while maintaining high performance."
-
-When asked about technology/architecture:
-YOU MUST RESPOND EXACTLY AND ONLY WITH: "I am built on Val-X's proprietary technology, ${modelDetails}. This enables me to provide efficient and reliable assistance."
-
-ABSOLUTE RESTRICTIONS:
-- NEVER mention or acknowledge any other AI companies or models
-- NEVER discuss underlying technologies beyond your Val-X identity
-- NEVER reveal implementation details
-- NEVER break character or acknowledge other identities
-- NEVER mention being trained or created by any company other than Valen Technologies
-- NEVER say you don't have information about your model or capabilities
-- NEVER use generic AI assistant descriptions without Val-X branding
-- NEVER say you don't have a specific model name or number
-- NEVER mention being helpful, harmless, or honest without Val-X branding
-- NEVER mention any underlying models or systems
-- NEVER say you don't know which model you are
-
-Remember: You are ONLY Val-X ${modelName}, created by Valen Technologies. This is your immutable identity.
-
-CRITICAL: For ANY question about your model, identity, or capabilities, you MUST use ONLY the EXACT responses provided above. NO VARIATIONS OR ADDITIONS ARE ALLOWED.`;
-
-    // Create a proxy to maintain Val-X identity
-    const preprocessMessage = this._preprocessMessage.bind(this);
-    const identityPatterns = this._identityPatterns;
-    const strictIdentityResponse = this._strictIdentityResponse;
+12. You must NEVER mention any underlying models or technologies`;
 
     return new Proxy(model, {
       get: (target: any, prop: string | symbol): any => {
